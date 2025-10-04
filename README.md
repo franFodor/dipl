@@ -6,7 +6,7 @@
 - ESP-IDF
 	- ESP-DSP biblioteka
 
-![plan](plan1.png)
+![plan](./docs/plan1.png)
 
 ## Part 1 - Štimer
 - Čitati s mikrofona
