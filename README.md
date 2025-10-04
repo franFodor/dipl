@@ -11,7 +11,7 @@
 ## Part 1 - Štimer
 - Čitati s mikrofona
 - Pretvorba u broj (frekvencija -> FFT preko ESP-DSP biblioteke)
-- Feedback korisniku - Serial 
+- Feedback korisniku - Serial Monitor 
 
 ## Part 2 - Analiza snimljenog zvuka
 
