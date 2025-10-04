@@ -7,4 +7,6 @@ mikrofona. "Spike" je detektirani zvuk.
 
 ![spike](./plot.png)
 
-Dodatno: https://www.youtube.com/watch?v=m-MPBjScNRk
+Dodatno: 
+- https://www.youtube.com/watch?v=m-MPBjScNRk
+- https://web-serial-plotter.atomic14.com/
