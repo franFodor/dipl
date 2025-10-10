@@ -67,6 +67,8 @@ static void compute_fft(float *y, size_t n) {
   dsps_view(y, BUFFER_SIZE / 2, 64, 10,  -600, 400, '|');
 }
 
+const float norm = 8388608.0f; // 2^23
+
 static void i2s_read_task(void *args) {
   int32_t r_buf[BUFFER_SIZE];
   size_t r_bytes = 0;
@@ -77,7 +79,12 @@ static void i2s_read_task(void *args) {
     if (i2s_channel_read(rx_handle, r_buf, sizeof(r_buf), &r_bytes, 1000) == ESP_OK) {
       ESP_LOGI(TAG, "Read task %zu bytes, buffer size %d", r_bytes, sizeof(r_buf));
       for (int i = 0; i < BUFFER_SIZE; i++) {
-        y[i * 2 + 0] = r_buf[i] * wind[i];
+        // bit shift according to documentation
+        float tmp = (r_buf[i] >> 8);
+        // normalize -1 1
+        tmp = tmp / norm;
+
+        y[i * 2 + 0] = tmp;
         y[i * 2 + 1] = 0;
       } 
     } else {
