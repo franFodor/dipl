@@ -16,7 +16,7 @@
 #include "sdkconfig.h"
 #include "math.h"
 
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 512
 
 static const char* TAG = "ESP32";
 static i2s_chan_handle_t rx_handle;
@@ -52,16 +52,30 @@ static void i2s_setup(void) {
   return;
 }
 
+static void compute_fft(float *y, size_t n) {
+  dsps_fft2r_fc32(y, BUFFER_SIZE);
+  dsps_bit_rev_fc32(y, BUFFER_SIZE);
+  dsps_cplx2reC_fc32(y, BUFFER_SIZE);
+
+  // TODO
+  for (int i = 0 ; i < BUFFER_SIZE / 2 ; i++) {
+      y[i] = 10 * log10f((y[i * 2 + 0] * y[i * 2 + 0] + y[i * 2 + 1] * y[i * 2 + 1]) / BUFFER_SIZE);
+  }
+
+  // Show power spectrum in 64x10 window from -100 to 0 dB from 0..N/4 samples
+  ESP_LOGW(TAG, "Signal x1");
+  dsps_view(y, BUFFER_SIZE / 2, 64, 10,  -600, 400, '|');
+}
+
 static void i2s_read_task(void *args) {
-  int32_t *r_buf = (int32_t *)calloc(1, BUFFER_SIZE);
-  assert(r_buf);
+  int32_t r_buf[BUFFER_SIZE];
   size_t r_bytes = 0;
 
   ESP_ERROR_CHECK(i2s_channel_enable(rx_handle));
 
   while(1) {
-    if (i2s_channel_read(rx_handle, r_buf, BUFFER_SIZE, &r_bytes, 1000) == ESP_OK) {
-      ESP_LOGI(TAG, "Read task %zu bytes", r_bytes);
+    if (i2s_channel_read(rx_handle, r_buf, sizeof(r_buf), &r_bytes, 1000) == ESP_OK) {
+      ESP_LOGI(TAG, "Read task %zu bytes, buffer size %d", r_bytes, sizeof(r_buf));
       for (int i = 0; i < BUFFER_SIZE; i++) {
         y[i * 2 + 0] = r_buf[i] * wind[i];
         y[i * 2 + 1] = 0;
@@ -70,33 +84,12 @@ static void i2s_read_task(void *args) {
       ESP_LOGI(TAG, "Read task fail!");
     }
 
-    dsps_fft2r_fc32(y, BUFFER_SIZE);
-    dsps_bit_rev_fc32(y, BUFFER_SIZE);
-    dsps_cplx2reC_fc32(y, BUFFER_SIZE);
+    // TODO remove later to avoid uneccesary calls, currenly just for testing
+    compute_fft(y, BUFFER_SIZE * 2);
 
-    for (int i = 0 ; i < BUFFER_SIZE / 2 ; i++) {
-        y[i] = 10 * log10f((y[i * 2 + 0] * y[i * 2 + 0] + y[i * 2 + 1] * y[i * 2 + 1]) / BUFFER_SIZE);
-      }
-
-    // Show power spectrum in 64x10 window from -100 to 0 dB from 0..N/4 samples
-    ESP_LOGW(TAG, "Signal x1");
-    dsps_view(y, BUFFER_SIZE / 2, 64, 10,  -600, 400, '|');
-    /*
-    int64_t sum = 0;
-    for(int i = 0; i < r_bytes / sizeof(int32_t); i++) {
-      sum += abs(r_buf[i]);
-    }
-
-    int32_t average_amplitude = sum / (r_bytes / sizeof(int32_t));
-    ESP_LOGI(TAG, "%ld", average_amplitude);
-    // za serial plotter
-    // printf("%d\n", average_amplitude);
-    */
-
-    vTaskDelay(pdMS_TO_TICKS(200));
+    vTaskDelay(pdMS_TO_TICKS(1000));
   }
 
-  free(r_buf);
   vTaskDelete(NULL);
 }
 
