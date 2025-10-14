@@ -8,6 +8,7 @@
 #include "driver/i2s_common.h"
 #include "driver/i2s_std.h"
 
+// https://github.com/ashokfernandez/Yin-Pitch-Tracking
 #include "Yin.h"
 
 #define BUFFER_SIZE 2048
