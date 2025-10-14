@@ -1,4 +1,4 @@
-# Očitavanje frekvencije s ESP32
+# Očitavanje frekvencije pomoću ESP32
 
 ## Instalacija
 
