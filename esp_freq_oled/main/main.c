@@ -137,8 +137,9 @@ static void oled_task(void *args) {
   char string2_buf[32];
 
   while(1) {
-  float local_pitch = 90;
-    if (lvgl_port_lock(0) && local_pitch > 10) {
+  float local_pitch = pitch;
+  // ESP_LOGI(TAG, "local pitch%.2f", local_pitch);
+    if (lvgl_port_lock(0)) {
       int handled = 0;
       snprintf(pitch_buf, sizeof(pitch_buf), "READ %.1fHz", local_pitch);
       lv_label_set_text(label_pitch, pitch_buf);
