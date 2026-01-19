@@ -15,5 +15,5 @@
 void web_server_start(void);
 void wifi_ap_start(void);
 
-/* Call this from your audio processing code */
+// call from audio processing
 void web_server_update_note(const char *note, float frequency, float cents);

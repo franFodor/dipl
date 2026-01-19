@@ -7,22 +7,21 @@
 
 static httpd_handle_t server = NULL;
 
-/* Shared state */
 static char current_note[8] = "None";
 static float current_freq = 0.0f;
 static float current_cents = 0.0f;
 static SemaphoreHandle_t note_mutex;
 
-/* ---------- HTTP HANDLERS ---------- */
+static const char *TAG = "wifi_ap";
 
-static esp_err_t test_handler(httpd_req_t *req)
-{
+
+/* ---------- HTTP HANDLERS ---------- */
+static esp_err_t test_handler(httpd_req_t *req) {
     httpd_resp_sendstr(req, "SERVER OK");
     return ESP_OK;
 }
 
-static esp_err_t file_get_handler(httpd_req_t *req)
-{
+static esp_err_t file_get_handler(httpd_req_t *req) {
     char path[128];
 
     if (strcmp(req->uri, "/") == 0) {
@@ -55,7 +54,7 @@ static esp_err_t file_get_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
-static esp_err_t api_get_handler(httpd_req_t *req){
+static esp_err_t api_get_handler(httpd_req_t *req) {
     char resp[128];
 
     xSemaphoreTake(note_mutex, portMAX_DELAY);
@@ -70,9 +69,7 @@ static esp_err_t api_get_handler(httpd_req_t *req){
 }
 
 /* ---------- PUBLIC API ---------- */
-
-void web_server_update_note(const char *note, float frequency, float cents)
-{
+void web_server_update_note(const char *note, float frequency, float cents) {
     if (!note_mutex) return;
 
     xSemaphoreTake(note_mutex, portMAX_DELAY);
@@ -83,14 +80,7 @@ void web_server_update_note(const char *note, float frequency, float cents)
     xSemaphoreGive(note_mutex);
 }
 
-static esp_err_t captive_portal_handler(httpd_req_t *req)
-{
-    httpd_resp_set_type(req, "text/html");
-    httpd_resp_send(req, "Success", HTTPD_RESP_USE_STRLEN);
-    return ESP_OK;
-}
-void web_server_start(void)
-{
+void web_server_start(void) {
     note_mutex = xSemaphoreCreateMutex();
 
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
@@ -116,22 +106,12 @@ void web_server_start(void)
         .handler  = test_handler
     };
 
-httpd_uri_t captive = {
-    .uri     = "/hotspot-detect.html",
-    .method  = HTTP_GET,
-    .handler = captive_portal_handler
-};
-
-httpd_register_uri_handler(server, &captive);
     httpd_register_uri_handler(server, &api);
     httpd_register_uri_handler(server, &test);
     httpd_register_uri_handler(server, &files);
 }
 
-static const char *TAG = "wifi_ap";
-
-void wifi_ap_start(void)
-{
+void wifi_ap_start(void) {
     /* NVS required */
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES ||

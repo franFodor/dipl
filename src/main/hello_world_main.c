@@ -50,6 +50,7 @@ note_t chromatic_scale[] = {
     {"F4", 349.23}, {"F#4", 369.99}, {"G4", 392.00}, {"G#4", 415.30}, {"A4", 440.00},
     {"A#4", 466.16}, {"B4", 493.88}
 };
+
 #define NUM_NOTES (sizeof(chromatic_scale) / sizeof(chromatic_scale[0]))
 
 typedef struct {
@@ -57,7 +58,7 @@ typedef struct {
     size_t sample_count;
 } audio_buffer_t;
 
-void i2s_reader_task(void* pvParameters) {
+static void i2s_reader_task(void* pvParameters) {
     int32_t* sample_buffer = (int32_t*)malloc(FFT_SIZE * sizeof(int32_t));
     if (sample_buffer == NULL) {
         ESP_LOGE("I2S", "Failed to allocate sample buffer");
@@ -78,8 +79,7 @@ void i2s_reader_task(void* pvParameters) {
     free(sample_buffer);
 }
 
-
-float quadratic_interpolation(float* magnitudes, int peak_bin) {
+static float quadratic_interpolation(float* magnitudes, int peak_bin) {
     if (peak_bin <= 0 || peak_bin >= (FFT_SIZE/2 - 1))
         return (float)peak_bin * SAMPLE_RATE / FFT_SIZE;
 
@@ -91,7 +91,7 @@ float quadratic_interpolation(float* magnitudes, int peak_bin) {
     if (fabsf(denom) < 1e-12f)
         return (float)peak_bin * SAMPLE_RATE / FFT_SIZE;
 
-    // Derived peak shift:
+    // derived peak shift:
     // p = (alpha - gamma) / (2 * (gamma - 2β + alpha))
     float p = (alpha - gamma) / (2.0f * denom);
 
@@ -99,9 +99,7 @@ float quadratic_interpolation(float* magnitudes, int peak_bin) {
     return peak * SAMPLE_RATE / FFT_SIZE;
 }
 
-
-// cents used later for note playing melody
-const char* find_closest_note(float frequency, float* cents_offset) {
+static const char* find_closest_note(float frequency, float* cents_offset) {
     const char* note = "Unknown";
     float min_diff = 1e9f;
     for (int i = 0; i < NUM_NOTES; i++) {
@@ -115,10 +113,7 @@ const char* find_closest_note(float frequency, float* cents_offset) {
     return note;
 }
 
-float harmonic_product_spectrum(float* magnitudes, int half_size, float* hps) {
-    //static float hps[FFT_SIZE / 2];
-    // OVO ISTO PREBACIT U AUDI PROCESSOR DA SE NE RADI SVAKI PUT ILI PROBAT STATIC
-    
+static float harmonic_product_spectrum(float* magnitudes, int half_size, float* hps) {
     float freq_res = (float)SAMPLE_RATE / FFT_SIZE;
 
     const int R = 4; // number of harmonics (r = 1..R)
@@ -157,19 +152,19 @@ float harmonic_product_spectrum(float* magnitudes, int half_size, float* hps) {
         }
     }
 
-
     // --- OCTAVE CORRECTION RULE ---
-    // Check if second peak one octave down exists and is strong enough
+    // check if second peak one octave down exists and is strong enough
     int lower_bin = best_bin / 2;
     if (lower_bin >= min_bin) {
         float chosen_amp = hps[best_bin];
         float lower_amp = hps[lower_bin];
 
-        // Condition: lower_peak ≈ 1/2 chosen AND amplitude ratio > threshold
+        // lower_peak ≈ 1/2 chosen AND amplitude ratio > threshold
         float approx_half = fabsf(lower_amp - chosen_amp * 0.5f);
         float ratio = lower_amp / (chosen_amp + 1e-12f);
         // TODO NARIHTAJ THRESHOLD 
-        const float RATIO_THRESHOLD = 0.05f; // suitable for 5 harmonics - change accordingly
+        // suitable for 5 harmonics - change accordingly
+        const float RATIO_THRESHOLD = 0.05f; 
 
         if (approx_half < chosen_amp * 0.25f && ratio > RATIO_THRESHOLD) {
             best_bin = lower_bin;
@@ -180,7 +175,7 @@ float harmonic_product_spectrum(float* magnitudes, int half_size, float* hps) {
     return precise_freq;
 }
 
-void guitar_frequency_analysis(float* magnitudes, float* hps) {
+static void guitar_frequency_analysis(float* magnitudes, float* hps) {
     // compress magnitudes to reduce dominance of harmonics (dynamic range compression)
     for (int i = 1; i < FFT_SIZE/2; i++) {
         magnitudes[i] = powf(magnitudes[i] + 1e-20f, 0.65f);
@@ -196,8 +191,8 @@ void guitar_frequency_analysis(float* magnitudes, float* hps) {
     }
 }
 
-void audio_processor_task(void* pvParameters) {
-    // Allocate audio_buffer on heap
+static void audio_processor_task(void* pvParameters) {
+    // allocate buffers on heap
     float* audio_buffer = (float*)malloc(FFT_SIZE * sizeof(float));
     if (audio_buffer == NULL) {
         ESP_LOGE("Processor", "Failed to allocate audio_buffer");
@@ -209,8 +204,7 @@ void audio_processor_task(void* pvParameters) {
         ESP_LOGE("Processor", "Failed to allocate hps");
         vTaskDelete(NULL);
     }
-    
-    // Allocate magnitude on heap
+
     float* magnitude = (float*)malloc((FFT_SIZE / 2) * sizeof(float));
     if (magnitude == NULL) {
         ESP_LOGE("Processor", "Failed to allocate magnitude");
@@ -265,8 +259,7 @@ void audio_processor_task(void* pvParameters) {
     free(audio_buffer);
 }
 
-
-void setup_i2s() {
+static void setup_i2s() {
     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
     i2s_new_channel(&chan_cfg, NULL, &rx_handle);
 
@@ -303,7 +296,6 @@ void app_main() {
 
     audio_data_queue = xQueueCreate(2, sizeof(audio_buffer_t));
     web_server_start();
-
 
     xTaskCreate(i2s_reader_task, "I2S_Reader",
                 I2S_READER_STACK_SIZE, NULL, I2S_READER_TASK_PRIO, NULL);
