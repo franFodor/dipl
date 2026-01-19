@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>ESP Guitar Tuner</title>
+    <link rel="stylesheet" href="bootstrap.css">
+    <link rel="stylesheet" href="style.css">
+    
+</head>
+<body>
+    <div id="navbar"></div>
+
+    <div class="container mt-5">
+        <div class="jumbotron text-center">
+            <h1 class="display-4">ESP Guitar Tuner</h1>
+        </div>
+    </div>
+
+    
+    <script src="jquery.js"></script>
+    <script src="popper.js"></script>
+    <script src="bootstrap.js"></script>
+    <script>
+        $(document).ready(function() {
+            fetch('nav.html')
+                .then(response => response.text())
+                .then(data => {
+                    $('#navbar').html(data);
+                    $('#nav-home').addClass('active').append('<span class="sr-only">(current)</span>');
+                });
+        });
+    </script>
+</body>
+</html>

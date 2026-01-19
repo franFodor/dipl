@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>ESP Guitar Tuner</title>
+    <link rel="stylesheet" href="bootstrap.css">
+    <link rel="stylesheet" href="style.css">
+    
+</head>
+<body>
+    <div id="navbar"></div>
+
+    <div class="container mt-4">
+        <h2 class="text-center">Guitar Tuner</h2>
+        <div class="row justify-content-center mb-4">
+            <div class="col-auto">
+                <div class="dropdown">
+                    <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Standard Tuning
+                    </button>
+                    <div class="dropdown-menu text-center" aria-labelledby="dropdownMenuButton">
+                        <a class="dropdown-item" href="#" onclick="selectTuning('Standard')">Standard</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="#" onclick="selectTuning('D Standard')">D Standard</a>
+                        <a class="dropdown-item" href="#" onclick="selectTuning('Drop D')">Drop D</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="#" onclick="selectTuning('Custom')">Custom</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="text-center">
+            <div id="tuning-display"></div>
+            <div id="meter">
+                <div id="green-zone"></div>
+                <div id="needle"></div>
+                <div id="center-line"></div>
+            </div>
+            <div id="readout">
+                <div id="note">--</div>
+                <div id="freq">-- Hz</div>
+                <div id="cents">0 cents</div>
+            </div>
+        </div>
+    </div>
+
+    
+    <script src="tuner.js"></script>
+    <script src="jquery.js"></script>
+    <script src="popper.js"></script>
+    <script src="bootstrap.js"></script>
+    <script>
+        $(document).ready(function() {
+            fetch('nav.html')
+                .then(response => response.text())
+                .then(data => {
+                    $('#navbar').html(data);
+                    $('#nav-tuner').addClass('active').append('<span class="sr-only">(current)</span>');
+                });
+        });
+    </script>
+</body>
+</html>

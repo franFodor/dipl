@@ -1,0 +1,39 @@
+body {
+    font-family: sans-serif;
+    text-align: center;
+}
+
+#meter {
+    position: relative;
+    width: 300px;
+    height: 150px;
+    margin: 40px auto;
+    border-top-left-radius: 300px;
+    border-top-right-radius: 300px;
+    border: 2px solid #333;
+    border-bottom: none;
+    overflow: hidden;
+}
+
+#needle {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 4px;
+    height: 140px;
+    background: red;
+    transform-origin: bottom center;
+    transform: rotate(0deg);
+    transition: transform 0.1s linear;
+}
+
+#green-zone {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: green;
+    clip-path: polygon(50% 100%, 40% 0%, 60% 0%);
+}
+
