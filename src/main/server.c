@@ -11,6 +11,7 @@ static char current_note[8] = "None";
 static float current_freq = 0.0f;
 static float current_cents = 0.0f;
 static SemaphoreHandle_t note_mutex;
+static char cached_response[128] = "{\"note\":\"None\",\"frequency\":0.00,\"cents\":0.0}";
 
 static const char *TAG = "wifi_ap";
 
@@ -55,16 +56,8 @@ static esp_err_t file_get_handler(httpd_req_t *req) {
 }
 
 static esp_err_t api_get_handler(httpd_req_t *req) {
-    char resp[128];
-
-    xSemaphoreTake(note_mutex, portMAX_DELAY);
-    snprintf(resp, sizeof(resp),
-             "{\"note\":\"%s\",\"frequency\":%.2f,\"cents\":%.1f}",
-             current_note, current_freq, current_cents);
-    xSemaphoreGive(note_mutex);
-
     httpd_resp_set_type(req, "application/json");
-    httpd_resp_send(req, resp, HTTPD_RESP_USE_STRLEN);
+    httpd_resp_send(req, cached_response, HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
 }
 
@@ -77,6 +70,12 @@ void web_server_update_note(const char *note, float frequency, float cents) {
     current_note[sizeof(current_note) - 1] = 0;
     current_freq = frequency;
     current_cents = cents;
+    
+    // Pre-generate JSON response for faster serving
+    snprintf(cached_response, sizeof(cached_response),
+             "{\"note\":\"%s\",\"frequency\":%.2f,\"cents\":%.1f}",
+             current_note, current_freq, current_cents);
+    
     xSemaphoreGive(note_mutex);
 }
 

@@ -84,7 +84,7 @@ async function update() {
         `rotate(${angle}deg)`;
 }
 
-setInterval(update, 100);
+setInterval(update, 50);
 update();
 updateTuningDisplay();
 

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>ESP Guitar Tuner - Scale</title>
+    <link rel="stylesheet" href="bootstrap.css">
+    <link rel="stylesheet" href="style.css">
+    
+</head>
+<body>
+    <div id="navbar"></div>
+
+    <div class="container mt-5">
+        <h2 class="text-center">Guitar Scales</h2>
+        <div class="row justify-content-center mt-4">
+            <div class="col-md-8">
+                <div class="alert alert-warning" role="alert">
+                    <h4 class="alert-heading">TODO</h4>
+                    <p>Add scale learning features and interactive scale explorer for different guitar scales and modes.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row justify-content-center mt-5">
+            <div class="col-md-10 text-center">
+                <img src="https://www.guitarscale.org/images/d_minor_letters.png" alt="D Minor Scale" class="img-fluid" style="max-width: 600px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                <!--<p class="mt-3 text-muted">D Minor Scale Diagram</p>-->
+            </div>
+        </div>
+    </div>
+
+    
+    <script src="jquery.js"></script>
+    <script src="popper.js"></script>
+    <script src="bootstrap.js"></script>
+    <script>
+        $(document).ready(function() {
+            fetch('nav.html')
+                .then(response => response.text())
+                .then(data => {
+                    $('#navbar').html(data);
+                    $('#nav-scale').addClass('active').append('<span class="sr-only">(current)</span>');
+                });
+        });
+    </script>
+</body>
+</html>

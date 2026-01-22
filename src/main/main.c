@@ -36,6 +36,10 @@ QueueHandle_t audio_data_queue;
 
 static i2s_chan_handle_t rx_handle;
 
+// Light frequency smoothing
+static float last_freq = 0.0f;
+static int no_detection_count = 0;  // Track consecutive non-detections
+
 typedef struct {
     const char* name;
     float frequency;
@@ -184,10 +188,40 @@ static void guitar_frequency_analysis(float* magnitudes, float* hps) {
     float freq = harmonic_product_spectrum(magnitudes, FFT_SIZE/2, hps);
     
     if (freq > 0.0f) {
+        // only accept if within 50% of last frequency or if it's the first reading
+        if (last_freq > 0.0f) {
+            float ratio = freq / last_freq;
+            // reject if frequency ratio is too extreme (octave jump or half)
+            // but allow detection to reset after 10 consecutive rejections (silence detected)
+            if (ratio < 0.5f || ratio > 2.0f) {
+                no_detection_count++;
+                // After 10 frames of rejection, allow a frequency reset
+                if (no_detection_count < 10) {
+                    // ignore this detection - likely a harmonic jump
+                    return;
+                } else {
+                    // Too many rejections - reset and allow new frequency
+                    last_freq = 0.0f;
+                    no_detection_count = 0;
+                }
+            } else {
+                no_detection_count = 0;  // Reset counter on successful detection
+            }
+        }
+        
+        last_freq = freq;
         float cents;
         const char* note = find_closest_note(freq, &cents);
         web_server_update_note(note, freq, cents);
         ESP_LOGI("tag", "NOTE: %s  %.2f Hz cent: %.2f", note, freq, cents);
+    } else {
+        // No detection, increment counter
+        no_detection_count++;
+        // Reset tracking after 20 frames of no detection (silence)
+        if (no_detection_count > 20) {
+            last_freq = 0.0f;
+            no_detection_count = 0;
+        }
     }
 }
 
