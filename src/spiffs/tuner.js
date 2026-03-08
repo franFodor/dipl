@@ -18,7 +18,7 @@ const tunings = {
 
 let currentTuning = "Standard";
 
-const TEST_MODE = false; // Set to false to use real ESP data
+const TEST_MODE = true; // Set to false to use real ESP data
 
 function noteToFrequency(noteName) {
     const midiNote = noteToMidi[noteName];

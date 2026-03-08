@@ -1,16 +1,20 @@
 #include "server.h"
-#include <string.h>
-#include <stdio.h>
-#include "esp_http_server.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/semphr.h"
 
 static httpd_handle_t server = NULL;
+
+// Note detection data
 static char current_note[8] = "None";
 static float current_freq = 0.0f;
 static float current_cents = 0.0f;
 static SemaphoreHandle_t note_mutex;
-static char cached_response[128] = "{\"note\":\"None\",\"frequency\":0.00,\"cents\":0.0}";
+static char cached_note_response[128] = "{\"note\":\"None\",\"frequency\":0.00,\"cents\":0.0}";
+
+// Chord detection data
+static char current_chord[32] = "None";
+static float current_confidence = 0.0f;
+static SemaphoreHandle_t chord_mutex;
+static char cached_chord_response[128] = "{\"chord\":\"None\",\"confidence\":0.0}";
+
 static const char *TAG = "wifi_ap";
 
 
@@ -53,9 +57,15 @@ static esp_err_t file_get_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
-static esp_err_t api_get_handler(httpd_req_t *req) {
+static esp_err_t api_note_handler(httpd_req_t *req) {
     httpd_resp_set_type(req, "application/json");
-    httpd_resp_send(req, cached_response, HTTPD_RESP_USE_STRLEN);
+    httpd_resp_send(req, cached_note_response, HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
+
+static esp_err_t api_chord_handler(httpd_req_t *req) {
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, cached_chord_response, HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
 }
 
@@ -70,15 +80,32 @@ void web_server_update_note(const char *note, float frequency, float cents) {
     current_cents = cents;
 
     // Pre-generate JSON response for faster serving
-    snprintf(cached_response, sizeof(cached_response),
+    snprintf(cached_note_response, sizeof(cached_note_response),
              "{\"note\":\"%s\",\"frequency\":%.2f,\"cents\":%.1f}",
              current_note, current_freq, current_cents);
 
     xSemaphoreGive(note_mutex);
 }
 
+void web_server_update_chord(const char *chord, float confidence) {
+    if (!chord_mutex) return;
+
+    xSemaphoreTake(chord_mutex, portMAX_DELAY);
+    strncpy(current_chord, chord, sizeof(current_chord) - 1);
+    current_chord[sizeof(current_chord) - 1] = 0;
+    current_confidence = confidence;
+
+    // Pre-generate JSON response for faster serving
+    snprintf(cached_chord_response, sizeof(cached_chord_response),
+             "{\"chord\":\"%s\",\"confidence\":%.2f}",
+             current_chord, current_confidence);
+
+    xSemaphoreGive(chord_mutex);
+}
+
 void web_server_start(void) {
     note_mutex = xSemaphoreCreateMutex();
+    chord_mutex = xSemaphoreCreateMutex();
 
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.uri_match_fn = httpd_uri_match_wildcard;
@@ -91,10 +118,16 @@ void web_server_start(void) {
         .handler  = file_get_handler
     };
 
-    httpd_uri_t api = {
+    httpd_uri_t api_note = {
         .uri      = "/api/note",
         .method   = HTTP_GET,
-        .handler  = api_get_handler
+        .handler  = api_note_handler
+    };
+
+    httpd_uri_t api_chord = {
+        .uri      = "/api/chord",
+        .method   = HTTP_GET,
+        .handler  = api_chord_handler
     };
 
     httpd_uri_t test = {
@@ -103,7 +136,8 @@ void web_server_start(void) {
         .handler  = test_handler
     };
 
-    httpd_register_uri_handler(server, &api);
+    httpd_register_uri_handler(server, &api_note);
+    httpd_register_uri_handler(server, &api_chord);
     httpd_register_uri_handler(server, &test);
     httpd_register_uri_handler(server, &files);
 }

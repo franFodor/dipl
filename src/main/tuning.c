@@ -1,7 +1,3 @@
-#include <stdio.h>
-#include <string.h>
-#include <math.h>
-#include "esp_log.h"
 #include "tuning.h"
 #include "server.h"
 

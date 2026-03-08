@@ -1,8 +1,52 @@
+/* Gruvbox Dark Color Scheme */
+:root {
+    --bg: #282828;
+    --bg1: #3c3836;
+    --bg2: #504945;
+    --fg: #ebdbb2;
+    --fg-gray: #a89984;
+    --red: #cc241d;
+    --green: #98971a;
+    --yellow: #d79921;
+    --blue: #458588;
+    --purple: #b16286;
+    --aqua: #689d6a;
+    --orange: #d65d0e;
+}
+
 body {
     font-family: sans-serif;
     text-align: center;
+    background-color: var(--bg);
+    color: var(--fg);
 }
 
+/* Navbar styling */
+.navbar {
+    background-color: var(--bg1) !important;
+    border-bottom: 1px solid var(--bg2);
+}
+
+.navbar-brand, .nav-link {
+    color: var(--fg) !important;
+}
+
+.nav-link:hover {
+    color: var(--yellow) !important;
+}
+
+.navbar-toggler-icon {
+    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='rgb(235, 219, 178)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
+}
+
+/* Jumbotron */
+.jumbotron {
+    background-color: var(--bg1);
+    color: var(--fg);
+    border: 1px solid var(--bg2);
+}
+
+/* Meter styling */
 #meter {
     position: relative;
     width: 300px;
@@ -10,9 +54,10 @@ body {
     margin: 40px auto;
     border-top-left-radius: 300px;
     border-top-right-radius: 300px;
-    border: 2px solid #333;
+    border: 2px solid var(--fg-gray);
     border-bottom: none;
     overflow: hidden;
+    background-color: var(--bg1);
 }
 
 #needle {
@@ -21,7 +66,7 @@ body {
     left: 50%;
     width: 4px;
     height: 140px;
-    background: red;
+    background: var(--orange);
     transform-origin: bottom center;
     transform: rotate(0deg);
     transition: transform 0.1s linear;
@@ -33,7 +78,206 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: green;
+    background-color: var(--green);
     clip-path: polygon(50% 100%, 40% 0%, 60% 0%);
+    opacity: 0.3;
 }
 
+#center-line {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 2px;
+    height: 100px;
+    background-color: var(--fg-gray);
+    transform: translateX(-50%);
+    opacity: 0.5;
+}
+
+/* Readout display */
+#readout {
+    background-color: var(--bg1);
+    border: 1px solid var(--bg2);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px auto;
+    max-width: 300px;
+}
+
+#note {
+    font-size: 4rem;
+    font-weight: bold;
+    color: var(--yellow);
+    margin-bottom: 10px;
+}
+
+#freq {
+    font-size: 1.5rem;
+    color: var(--fg-gray);
+    margin-bottom: 5px;
+}
+
+#cents {
+    font-size: 1.2rem;
+    color: var(--aqua);
+}
+
+/* Dropdown menu */
+.dropdown-menu {
+    background-color: var(--bg1);
+    border: 1px solid var(--bg2);
+}
+
+.dropdown-item {
+    color: var(--fg);
+}
+
+.dropdown-item:hover {
+    background-color: var(--bg2);
+    color: var(--yellow);
+}
+
+.dropdown-divider {
+    border-top: 1px solid var(--bg2);
+}
+
+/* Buttons */
+.btn-secondary {
+    background-color: var(--bg2);
+    border-color: var(--fg-gray);
+    color: var(--fg);
+}
+
+.btn-secondary:hover {
+    background-color: var(--fg-gray);
+    color: var(--bg);
+}
+
+/* Tuning display */
+#tuning-display {
+    background-color: var(--bg1);
+    border: 1px solid var(--bg2);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.string-indicator {
+    color: var(--fg-gray);
+    margin: 5px;
+}
+
+.string-indicator.active {
+    color: var(--green);
+    font-weight: bold;
+}
+
+/* Scale page */
+.scale-note {
+    display: inline-block;
+    background-color: var(--bg1);
+    border: 1px solid var(--bg2);
+    border-radius: 4px;
+    padding: 8px 16px;
+    margin: 5px;
+    color: var(--fg);
+}
+
+.scale-note.root {
+    background-color: var(--orange);
+    color: var(--bg);
+}
+
+.scale-note.interval {
+    background-color: var(--blue);
+    color: var(--fg);
+}
+
+/* Cards */
+.card {
+    background-color: var(--bg1);
+    border: 1px solid var(--bg2);
+}
+
+.card-header {
+    background-color: var(--bg2);
+    color: var(--fg);
+    border-bottom: 1px solid var(--bg2);
+}
+
+.card-body {
+    color: var(--fg);
+}
+
+/* Form elements */
+.form-control {
+    background-color: var(--bg1);
+    border: 1px solid var(--bg2);
+    color: var(--fg);
+}
+
+.form-control:focus {
+    background-color: var(--bg1);
+    border-color: var(--yellow);
+    color: var(--fg);
+}
+
+/* Links */
+a {
+    color: var(--aqua);
+}
+
+a:hover {
+    color: var(--yellow);
+}
+
+/* Chord detector page */
+.chord-display {
+    background-color: var(--bg1);
+    border-radius: 8px;
+    padding: 40px 20px;
+    text-align: center;
+}
+
+#chord-name {
+    font-size: 4rem;
+    font-weight: bold;
+    color: var(--fg);
+    margin-bottom: 15px;
+}
+
+#chord-name.detected {
+    color: var(--green);
+}
+
+#chord-confidence {
+    font-size: 1.5rem;
+    color: var(--fg-gray);
+}
+
+/* Status indicator */
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background-color: var(--bg1);
+    border-radius: 20px;
+    font-size: 0.9rem;
+}
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: var(--fg-gray);
+}
+
+.status-dot.connected {
+    background-color: var(--green);
+    box-shadow: 0 0 8px var(--green);
+}
+
+.status-dot.disconnected {
+    background-color: var(--red);
+}

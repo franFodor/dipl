@@ -1,5 +1,6 @@
 //http://musicweb.ucsd.edu/~trsmyth/analysis/analysis.pdf
 
+// TODO sort out includes
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
@@ -16,6 +17,10 @@
 
 #include "server.h"
 #include "tuning.h"
+#include "chord.h"
+
+// Set to 1 for chord detection mode, 0 for tuning mode
+#define CHORD_DETECTION_MODE  1
 
 #define SAMPLE_RATE     16000
 #define SAMPLE_BITS     I2S_DATA_BIT_WIDTH_32BIT
@@ -26,11 +31,10 @@
 #define I2S_WS_IO       25
 #define I2S_DI_IO       33
 
-// TODO make buffers on heap to reduce stack size
 #define I2S_READER_TASK_PRIO   5
 #define I2S_READER_STACK_SIZE  5000
 #define PROCESSOR_TASK_PRIO    4
-#define PROCESSOR_STACK_SIZE   50000
+#define PROCESSOR_STACK_SIZE   70000
 
 QueueHandle_t audio_data_queue;
 
@@ -83,15 +87,21 @@ static void audio_processor_task(void* pvParameters) {
         vTaskDelete(NULL);
     }
 
-    // NAVODNO STAVIT STATIC ISPREAD FLOAT da ne bude u tasku nego globalno
-    //float audio_buffer[FFT_SIZE];
     float hann_window[FFT_SIZE];
     float fft_buffer[FFT_SIZE * 2];
-    //float magnitude[FFT_SIZE / 2];
     audio_buffer_t audio_buf;
 
     dsps_fft2r_init_fc32(NULL, FFT_SIZE);
     dsps_wind_hann_f32(hann_window, FFT_SIZE);
+
+#if CHORD_DETECTION_MODE
+    ESP_LOGI("Processor", "Starting in CHORD DETECTION mode");
+    chord_init();
+    chord_result_t chord_result;
+#else
+    ESP_LOGI("Processor", "Starting in TUNING mode");
+    tuning_init();
+#endif
 
     while (1) {
         xQueueReceive(audio_data_queue, &audio_buf, portMAX_DELAY);
@@ -121,8 +131,19 @@ static void audio_processor_task(void* pvParameters) {
             magnitude[i] = sqrtf(real * real + imag * imag);
         }
 
+#if CHORD_DETECTION_MODE
+        chord_detect(magnitude, audio_buffer, &chord_result);
+
+        if (chord_result.valid) {
+            web_server_update_chord(chord_result.name, chord_result.confidence);
+            ESP_LOGI("chord", "Detected: %s (%.2f)", chord_result.name, chord_result.confidence);
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(50));
+#else
         tuning_frequency_analysis(magnitude, hps);
         vTaskDelay(pdMS_TO_TICKS(10));
+#endif
     }
 
     free(hps);
@@ -167,11 +188,10 @@ void app_main() {
 
     audio_data_queue = xQueueCreate(2, sizeof(audio_buffer_t));
     web_server_start();
-    tuning_init();
-
-    xTaskCreate(i2s_reader_task, "I2S_Reader",
-                I2S_READER_STACK_SIZE, NULL, I2S_READER_TASK_PRIO, NULL);
 
     xTaskCreate(audio_processor_task, "Audio_Processor",
                 PROCESSOR_STACK_SIZE, NULL, PROCESSOR_TASK_PRIO, NULL);
+
+    xTaskCreate(i2s_reader_task, "I2S_Reader",
+                I2S_READER_STACK_SIZE, NULL, I2S_READER_TASK_PRIO, NULL);
 }

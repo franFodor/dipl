@@ -7,6 +7,9 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "esp_netif.h"
+#include "esp_http_server.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 
 #define WIFI_AP_SSID      "ESP_GUITAR_TUNER"
 #define WIFI_AP_PASS      "12345678"
@@ -26,11 +29,19 @@ void web_server_start(void);
 
 /**
  * Update the current note detection data
- * 
+ *
  * @param note Name of the detected note (e.g., "D3")
  * @param frequency Detected frequency in Hz
  * @param cents Deviation from the target note in cents
  */
 void web_server_update_note(const char *note, float frequency, float cents);
+
+/**
+ * Update the current chord detection data
+ *
+ * @param chord Name of the detected chord (e.g., "C major")
+ * @param confidence Detection confidence (0.0 - 1.0)
+ */
+void web_server_update_chord(const char *chord, float confidence);
 
 #endif // SERVER_H
