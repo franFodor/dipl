@@ -20,6 +20,8 @@ let currentTuning = "Standard";
 
 const TEST_MODE = true; // Set to false to use real ESP data
 
+const tuningNames = Object.keys(tunings);
+let selectedTuning = tuningNames[0];
 function noteToFrequency(noteName) {
     const midiNote = noteToMidi[noteName];
     return A4 * Math.pow(2, (midiNote - 69) / 12);
@@ -27,7 +29,7 @@ function noteToFrequency(noteName) {
 
 function selectTuning(tuningName) {
     currentTuning = tuningName;
-    document.getElementById("dropdownMenuButton").textContent = tuningName + " Tuning";
+    selectedTuning = tuningName;
     updateTuningDisplay();
 }
 
@@ -35,12 +37,12 @@ function updateTuningDisplay() {
     const tuning = tunings[currentTuning];
     
     if (currentTuning === 'Custom') {
-        document.getElementById('tuning-display').innerHTML = '<div class="mt-3 text-center">TODO</div>';
+        document.getElementById('tuning-display').innerHTML = '<div class="text-center">TODO</div>';
         return;
     }
     
     // Display target frequencies for each string
-    let freqHtml = '<div class="mt-3 text-center">';
+    let freqHtml = '<div class="text-center">';
     tuning.forEach((note, index) => {
         const freq = noteToFrequency(note);
         freqHtml += '<strong>' + note + '</strong>: ' + freq.toFixed(2) + ' Hz';
@@ -50,10 +52,29 @@ function updateTuningDisplay() {
     document.getElementById('tuning-display').innerHTML = freqHtml;
 }
 
+function renderTuningDropdown() {
+    const dropdown = document.getElementById('tuning-dropdown');
+    dropdown.innerHTML = '';
+    // Restore original options without separators
+    const options = ["Standard", "D Standard", "Drop D", "Custom"];
+    options.forEach(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        dropdown.appendChild(option);
+    });
+    dropdown.value = selectedTuning;
+    updateTuningDisplay();
+}
+
+function handleTuningDropdownChange(e) {
+    selectTuning(e.target.value);
+    updateTuningDisplay();
+}
 async function update() {
     let j;
     if (TEST_MODE) {
-        j = {frequency: 400.5, note: "A", cents: 10.5}; // Test data
+        j = {frequency: 111.0, note: "A", cents: 2.5}; // Test data
     } else {
         const r = await fetch("/api/note");
         j = await r.json();
@@ -85,12 +106,17 @@ async function update() {
 }
 
 setInterval(update, 50);
-update();
-updateTuningDisplay();
+// Initialization now handled in $(document).ready())
 
 // Close dropdown when clicking outside
 $(document).on('click', function(e) {
     if (!$(e.target).closest('.dropdown').length) {
         $('.dropdown-menu').removeClass('show');
     }
+});
+
+$(document).ready(function() {
+    renderTuningDropdown();
+    document.getElementById('tuning-dropdown').addEventListener('change', handleTuningDropdownChange);
+    update();
 });

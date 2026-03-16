@@ -97,6 +97,11 @@ You could also use the ESP-IDF extension in Visual Studio Code.
 3. Connect to the WiFi and web interface as above
 4. Strum a chord and view detection in serial monitor
 
+## Web
+
+![image](docs/tuner.png)
+![image](docs/chord.png)
+
 ## References
 
 - [FFT-based Pitch Detection](http://musicweb.ucsd.edu/~trsmyth/analysis/analysis.pdf)

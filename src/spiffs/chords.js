@@ -40,5 +40,14 @@ const CHORDS = {
         [0, null],    // G
         [0, null],    // B
         [3, 3]        // e
+    ],
+    "A minor": [
+        [null, null], // E
+        [0, null],    // A
+        [2, 2],       // D
+        [2, 3],       // G
+        [1, 1],       // B
+        [0, null]     // e
     ]
+
 };

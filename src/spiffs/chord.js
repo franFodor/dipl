@@ -12,21 +12,6 @@ function updateChordDisplay(chord) {
     }
 }
 
-function updateStatus(connected) {
-    const statusDot = document.getElementById('status-dot');
-    const statusText = document.getElementById('status-text');
-    
-    if (connected) {
-        statusDot.classList.add('connected');
-        statusDot.classList.remove('disconnected');
-        statusText.textContent = "Live";
-    } else {
-        statusDot.classList.remove('connected');
-        statusDot.classList.add('disconnected');
-        statusText.textContent = "Disconnected";
-    }
-}
-
 async function fetchChord() {
     try {
         let data;
@@ -40,10 +25,8 @@ async function fetchChord() {
             lastChord = data.chord;
             updateChordDisplay(data.chord);
         }
-        updateStatus(true);
     } catch (error) {
         console.error('Error fetching chord:', error);
-        updateStatus(false);
     }
 }
 
@@ -85,10 +68,15 @@ function renderFretboard(chordPositions = null) {
         for (let fret = 0; fret < 12; fret++) {
             const cell = document.createElement('div');
             cell.className = 'fret-cell';
-            // Always render fret number label on the bottom row (lowest string)
-            if (string === 0 && (fret === 0 || fret === 11)) {
+
+            if (string === 0) {
+                cell.classList.add('last-row');
+            }
+
+            if (string === 0 && (fret === 0 || fret == 2 || fret == 4 || fret == 6 || fret == 8 || fret === 11)) {
                 cell.innerHTML = `<span class='fret-label'>${fret+1}</span>`;
             }
+
             if (chordPositions) {
                 const pos = chordPositions[string][0];
                 const finger = chordPositions[string][1];
@@ -99,10 +87,12 @@ function renderFretboard(chordPositions = null) {
                     cell.appendChild(circle);
                 }
             }
+
             fretboard.appendChild(cell);
         }
+        }
     }
-}
+
 
 $(document).ready(function() {
     // Load navigation
