@@ -76,7 +76,6 @@ static float find_max(const float* arr, int size) {
 void chord_detect(float* magnitudes, float* audio_samples, chord_result_t* result) {
     // Initialize result as invalid
     result->valid = 0;
-    result->confidence = 0.0f;
     result->name[0] = '\0';
 
     // Calculate RMS amplitude
@@ -181,15 +180,12 @@ void chord_detect(float* magnitudes, float* audio_samples, chord_result_t* resul
 
     if (best_score >= CHORD_THRESHOLD) {
         result->valid = 1;
-        result->confidence = best_score;
-
         if (is_major) {
             snprintf(result->name, sizeof(result->name), "%s major", NOTE_NAMES[best_root]);
         } else {
             snprintf(result->name, sizeof(result->name), "%s minor", NOTE_NAMES[best_root]);
         }
-
-        ESP_LOGI(TAG, "Chord: %s (confidence: %.2f)", result->name, result->confidence);
+        ESP_LOGI(TAG, "Chord: %s", result->name);
     }
 
     // Reset accumulator

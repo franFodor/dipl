@@ -40,8 +40,7 @@ void web_server_update_note(const char *note, float frequency, float cents);
  * Update the current chord detection data
  *
  * @param chord Name of the detected chord (e.g., "C major")
- * @param confidence Detection confidence (0.0 - 1.0)
  */
-void web_server_update_chord(const char *chord, float confidence);
+void web_server_update_chord(const char *chord);
 
 #endif // SERVER_H

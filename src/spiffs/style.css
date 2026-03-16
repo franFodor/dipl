@@ -111,22 +111,21 @@ body {
     margin-bottom: 10px;
 }
 
-#freq {
+.fret-xo {
     font-size: 1.5rem;
-    color: var(--fg-gray);
-    margin-bottom: 5px;
+    color: var(--yellow);
+    font-weight: bold;
+    pointer-events: none;
+    z-index: 3;
+    text-shadow: 0 2px 8px var(--bg), 0 0 2px var(--yellow);
+    display: inline-block;
+    height: 32px;
+    width: 32px;
+    padding-bottom: 8px;
+    vertical-align: bottom;
+    text-align: center;
 }
 
-#cents {
-    font-size: 1.2rem;
-    color: var(--aqua);
-}
-
-/* Dropdown menu */
-.dropdown-menu {
-    background-color: var(--bg1);
-    border: 1px solid var(--bg2);
-}
 
 .dropdown-item {
     color: var(--fg);
@@ -250,34 +249,106 @@ a:hover {
     color: var(--green);
 }
 
-#chord-confidence {
-    font-size: 1.5rem;
-    color: var(--fg-gray);
+/* Chord dropdown style (match tuner) */
+#chord-dropdown {
+    background-color: var(--bg1) !important;
+    color: var(--fg) !important;
+    border: 1px solid var(--bg2) !important;
+    font-size: 1.2rem;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    width: auto;
+    min-width: 180px;
+    max-width: 240px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+#chord-dropdown option {
+    text-align: center;
+}
+#chord-dropdown:focus {
+    border-color: var(--yellow) !important;
+    outline: none;
 }
 
-/* Status indicator */
-.status-indicator {
+/* Fretboard grid styles */
+#fretboard {
+    display: grid;
+    grid-template-columns: 32px repeat(12, 48px); /* first column for X/O */
+    grid-template-rows: repeat(6, 32px);
+    gap: 0;
+    background: var(--bg1);
+    border: 4px solid var(--bg2);
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+    min-width: 640px;
+    min-height: 192px;
+    position: relative;
+    padding-top: 20px;
+}
+.fret-cell {
+    width: 48px;
+    height: 32px;
+    background: none;
+    border-right: 2px solid var(--fg-gray);
+    border-bottom: 2px solid var(--fg-gray);
+    border-left: 2px solid var(--fg-gray);
+    border-top: 2px solid var(--fg-gray);
+    box-sizing: border-box;
+    position: relative;
+}
+.fret-label {
+    font-size: 0.9rem;
+    color: var(--fg-gray);
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translate(-50%, 0);
+    margin-top: 2px;
+}
+.fret-circle {
+    width: 26px;
+    height: 26px;
+    background: var(--blue);
+    border-radius: 50%;
+    position: absolute;
+    left: 50%;
+    top: 0;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 1px 6px rgba(0,0,0,0.18);
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    background-color: var(--bg1);
-    border-radius: 20px;
-    font-size: 0.9rem;
+    justify-content: center;
+    color: var(--fg);
+    font-weight: bold;
+    font-size: 1.2rem;
+    z-index: 2;
+    border: 2px solid var(--fg);
 }
-
-.status-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background-color: var(--fg-gray);
+.fret-xo {
+    font-size: 1.5rem;
+    color: var(--yellow);
+    font-weight: bold;
+    pointer-events: none;
+    z-index: 3;
+    text-shadow: 0 2px 8px var(--bg), 0 0 2px var(--yellow);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    height: 32px;
+    width: 32px;
+    padding-bottom: 20px;
 }
-
-.status-dot.connected {
-    background-color: var(--green);
-    box-shadow: 0 0 8px var(--green);
-}
-
-.status-dot.disconnected {
-    background-color: var(--red);
+#fretboard-container {
+    min-width: 576px;
+    position: relative;
+    height: 240px;
+    background: var(--bg);
+    border-radius: 10px;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.22);
+    margin-bottom: 2rem;
 }

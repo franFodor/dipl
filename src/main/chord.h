@@ -39,7 +39,6 @@ static const float MINOR_TEMPLATE[NUM_PITCH_CLASSES] = {
  */
 typedef struct {
     char name[32];      // Chord name (e.g., "C major", "D# minor")
-    float confidence;   // Detection confidence (0.0 - 1.0)
     int valid;          // 1 if valid chord detected, 0 otherwise
     float amplitude;    // Detected audio amplitude (RMS)
 } chord_result_t;

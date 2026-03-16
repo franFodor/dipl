@@ -135,8 +135,8 @@ static void audio_processor_task(void* pvParameters) {
         chord_detect(magnitude, audio_buffer, &chord_result);
 
         if (chord_result.valid) {
-            web_server_update_chord(chord_result.name, chord_result.confidence);
-            ESP_LOGI("chord", "Detected: %s (%.2f)", chord_result.name, chord_result.confidence);
+            web_server_update_chord(chord_result.name);
+            ESP_LOGI("chord", "Detected: %s", chord_result.name);
         }
 
         vTaskDelay(pdMS_TO_TICKS(50));

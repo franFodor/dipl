@@ -11,9 +11,8 @@ static char cached_note_response[128] = "{\"note\":\"None\",\"frequency\":0.00,\
 
 // Chord detection data
 static char current_chord[32] = "None";
-static float current_confidence = 0.0f;
 static SemaphoreHandle_t chord_mutex;
-static char cached_chord_response[128] = "{\"chord\":\"None\",\"confidence\":0.0}";
+static char cached_chord_response[128] = "{\"chord\":\"None\"}";
 
 static const char *TAG = "wifi_ap";
 
@@ -87,18 +86,17 @@ void web_server_update_note(const char *note, float frequency, float cents) {
     xSemaphoreGive(note_mutex);
 }
 
-void web_server_update_chord(const char *chord, float confidence) {
+void web_server_update_chord(const char *chord) {
     if (!chord_mutex) return;
 
     xSemaphoreTake(chord_mutex, portMAX_DELAY);
     strncpy(current_chord, chord, sizeof(current_chord) - 1);
     current_chord[sizeof(current_chord) - 1] = 0;
-    current_confidence = confidence;
 
     // Pre-generate JSON response for faster serving
     snprintf(cached_chord_response, sizeof(cached_chord_response),
-             "{\"chord\":\"%s\",\"confidence\":%.2f}",
-             current_chord, current_confidence);
+             "{\"chord\":\"%s\"}",
+             current_chord);
 
     xSemaphoreGive(chord_mutex);
 }
