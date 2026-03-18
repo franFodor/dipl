@@ -1,7 +1,8 @@
-const TEST_MODE = true; // Set to false to use real ESP data
+const TEST_MODE = false; // Set to false to use real ESP data
 let selectedChordName = "A major"; // User's selected chord to practice
 let detectedChordName = "None"; // Chord detected by API
 let detectedNotes = [];
+let isListening = false; // Whether user has pressed Listen button
 
 // Note positions on fretboard for standard tuning
 function getNoteAtFret(string, fret) {
@@ -17,52 +18,56 @@ function getNoteAtFret(string, fret) {
 
 function updateChordDisplay(chord, notes) {
     const chordNameEl = document.getElementById('chord-name');
-    const notesContainerEl = document.getElementById('notes-display');
+    const targetNotesEl = document.getElementById('target-notes-display');
+    const detectedNotesEl = document.getElementById('detected-notes-display');
+    
+    console.log('updateChordDisplay called:', {
+        chord: chord,
+        selectedChordName: selectedChordName,
+        detectedChordName: detectedChordName
+    });
     
     if (chord && chord !== "None") {
         chordNameEl.textContent = chord;
-        chordNameEl.classList.add('detected');
         
         // Store detected chord info
         detectedChordName = chord;
         detectedNotes = notes || [];
         
-        // Display individual notes
-        if (notesContainerEl && notes && notes.length > 0) {
-            notesContainerEl.innerHTML = '<strong>Notes:</strong> ' + notes.join(', ');
-            notesContainerEl.style.display = 'block';
+        // Show detected notes only when listening
+        if (isListening && detectedNotesEl && notes && notes.length > 0) {
+            detectedNotesEl.innerHTML = '<strong>Detected Notes:</strong> ' + notes.join(', ');
+            detectedNotesEl.style.display = 'block';
         } else {
-            notesContainerEl.style.display = 'none';
+            detectedNotesEl.style.display = 'none';
         }
     } else {
         chordNameEl.textContent = "--";
-        chordNameEl.classList.remove('detected');
         detectedChordName = "None";
         detectedNotes = [];
-        if (notesContainerEl) {
-            notesContainerEl.style.display = 'none';
+        if (detectedNotesEl) {
+            detectedNotesEl.style.display = 'none';
         }
     }
     
-    // Highlight fretboard based on whether detected matches selected
+    // Update chord color based on comparison
+    updateChordColor();
+    
     highlightFretboard();
 }
 
 function highlightFretboard() {
-    // Check if detected chord matches selected chord
-    const isCorrect = (detectedChordName === selectedChordName && detectedChordName !== "None");
-    
-    // Get the chord positions to display (use selected chord for fingering guide)
     const chordData = CHORDS[selectedChordName];
     if (!chordData || !chordData.positions) {
         return;
     }
     
-    // First render the selected chord positions in blue (target notes)
+    // Always render the selected chord positions in blue (target notes)
     highlightSelectedChord(chordData.positions);
     
-    // Then overlay the detected notes in green (correct) or red (wrong)
-    if (detectedNotes.length > 0) {
+    // Only show detected notes if listening is active
+    if (isListening && detectedNotes.length > 0) {
+        const isCorrect = (detectedChordName === selectedChordName && detectedChordName !== "None");
         highlightDetectedNotes(detectedNotes, isCorrect);
     }
 }
@@ -263,8 +268,8 @@ async function fetchChord() {
     try {
         let data;
         if (TEST_MODE) {
-            // In test mode, always return A major as detected
-            // Select different chords from dropdown to see red (wrong) or green (correct)
+            // In test mode, always detect A major regardless of selection
+            // This lets you test: select A major = green, select anything else = red
             data = { chord: "A major", notes: ["A", "C#", "E"] };
         } else {
             const response = await fetch('/api/chord');
@@ -300,8 +305,44 @@ function renderDropdown() {
 
 function handleDropdownChange(e) {
     selectedChordName = e.target.value;
+    console.log('Dropdown changed, selectedChordName:', selectedChordName);
+    
     renderFretboard(CHORDS[selectedChordName].positions);
+
+    // Update target notes display
+    const targetNotesEl = document.getElementById('target-notes-display');
+    const chordData = CHORDS[selectedChordName];
+    if (targetNotesEl && chordData && chordData.notes) {
+        targetNotesEl.innerHTML = '<strong>Target Notes:</strong> ' + chordData.notes.join(', ');
+    }
+
+    // Re-evaluate chord color based on new selection
+    updateChordColor();
+    
     highlightFretboard();
+}
+
+function updateChordColor() {
+    const chordNameEl = document.getElementById('chord-name');
+    if (!chordNameEl || detectedChordName === "None") {
+        return;
+    }
+    
+    const isCorrect = (detectedChordName === selectedChordName);
+    console.log('updateChordColor - Comparison:', {
+        detectedChordName: detectedChordName,
+        selectedChordName: selectedChordName,
+        isCorrect: isCorrect
+    });
+    
+    chordNameEl.classList.remove('detected-correct', 'detected-incorrect');
+    if (isCorrect) {
+        chordNameEl.classList.add('detected-correct');
+        console.log('Adding detected-correct class');
+    } else {
+        chordNameEl.classList.add('detected-incorrect');
+        console.log('Adding detected-incorrect class');
+    }
 }
 
 function renderFretboard(chordPositions = null) {
@@ -384,7 +425,47 @@ $(document).ready(function() {
     // Initialize dropdown and fretboard
     renderDropdown();
     renderFretboard(CHORDS[selectedChordName].positions);
+    
+    // Show target notes for initial chord
+    const targetNotesEl = document.getElementById('target-notes-display');
+    const initialChordData = CHORDS[selectedChordName];
+    if (targetNotesEl && initialChordData && initialChordData.notes) {
+        targetNotesEl.innerHTML = '<strong>Target Notes:</strong> ' + initialChordData.notes.join(', ');
+    }
+    
     highlightFretboard();
 
     document.getElementById('chord-dropdown').addEventListener('change', handleDropdownChange);
+    
+    // Listen button toggle
+    const listenBtn = document.getElementById('listen-btn');
+    if (listenBtn) {
+        listenBtn.addEventListener('click', function() {
+            isListening = !isListening;
+            if (isListening) {
+                listenBtn.classList.add('listening');
+                listenBtn.textContent = 'Stop';
+                // Update detected notes display when starting to listen
+                const detectedNotesEl = document.getElementById('detected-notes-display');
+                const chordNameEl = document.getElementById('chord-name');
+                if (detectedNotesEl && detectedNotes.length > 0) {
+                    detectedNotesEl.innerHTML = '<strong>Detected Notes:</strong> ' + detectedNotes.join(', ');
+                    detectedNotesEl.style.display = 'block';
+                }
+                if (chordNameEl && detectedChordName !== "None") {
+                    chordNameEl.textContent = detectedChordName;
+                    chordNameEl.classList.add('detected');
+                }
+            } else {
+                listenBtn.classList.remove('listening');
+                listenBtn.textContent = 'Listen';
+                // Reset detected chord when stopping
+                detectedChordName = "None";
+                detectedNotes = [];
+                document.getElementById('chord-name').textContent = "--";
+                document.getElementById('detected-notes-display').style.display = 'none';
+            }
+            highlightFretboard();
+        });
+    }
 });

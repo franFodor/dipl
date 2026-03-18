@@ -1,0 +1,131 @@
+/* Fretboard grid styles */
+
+#fretboard {
+    display: grid;
+    grid-template-columns: 32px repeat(12, 48px); /* first column for X/O */
+    grid-template-rows: repeat(5, 32px);
+    gap: 0;
+    background: var(--bg1);
+    border: 4px solid var(--bg2);
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+    min-width: 640px;
+    min-height: 192px;
+    position: relative;
+    padding-top: 20px;
+}
+
+.fret-cell {
+    width: 48px;
+    height: 32px;
+    background: none;
+    border-right: 2px solid var(--fg-gray);
+    border-top: 2px solid var(--fg-gray);
+    box-sizing: border-box;
+    position: relative;
+}
+
+.fret-label {
+    font-size: 0.9rem;
+    color: var(--fg-gray);
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translate(-50%, 0);
+    margin-top: 10px;
+}
+
+.fret-cell.last-row {
+    border-right: none;
+    height: 5px;
+}
+
+.fret-circle {
+    width: 26px;
+    height: 26px;
+    background: var(--blue);
+    border-radius: 50%;
+    position: absolute;
+    left: 50%;
+    top: 0;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 1px 6px rgba(0,0,0,0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--fg);
+    font-weight: bold;
+    font-size: 1.2rem;
+    z-index: 2;
+    border: 2px solid var(--fg);
+}
+
+.fret-xo-circle {
+    top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1rem;
+}
+
+.fret-circle-target {
+    background: var(--blue);
+}
+
+.fret-circle-correct {
+    background: var(--green) !important;
+}
+
+.fret-circle-incorrect {
+    background: var(--red) !important;
+}
+
+.fret-xo {
+    height: 32px;
+    width: 32px;
+    transform: translateY(-16px);
+    vertical-align: bottom;
+    text-align: center;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.fret-xo .fret-circle {
+    position: static;
+    transform: none;
+    margin: 0 auto;
+}
+
+/* Played note highlighting */
+.note-circle {
+    width: 26px;
+    height: 26px;
+    background: var(--green);
+    border-radius: 50%;
+    position: absolute;
+    left: 50%;
+    top: 0;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 1px 6px rgba(0,0,0,0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--fg);
+    font-weight: bold;
+    font-size: 0.9rem;
+    z-index: 1;
+    border: 2px solid var(--fg);
+}
+
+.note-circle-correct {
+    background: var(--green);
+}
+
+.note-circle-incorrect {
+    background: var(--red);
+}
+
+#fretboard-container {
+    position: relative;
+    height: 240px;
+}

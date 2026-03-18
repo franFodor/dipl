@@ -1,0 +1,38 @@
+/* Home page - Tool cards */
+
+.tool-card {
+    text-decoration: none !important;
+    color: inherit;
+    display: block;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tool-card:hover {
+    text-decoration: none !important;
+    transform: translateY(-5px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.tool-card .card {
+    min-height: 280px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.tool-card:hover .card {
+    background-color: var(--bg2);
+}
+
+.tool-card .card-title {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    font-weight: bold;
+}
+
+.tool-card .card-text {
+    font-size: 1.1rem;
+    color: var(--fg-gray);
+}

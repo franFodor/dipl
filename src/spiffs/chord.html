@@ -5,6 +5,8 @@
     <title>Chord Practice</title>
     <link rel="stylesheet" href="bootstrap.css">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="chord.css">
+    <link rel="stylesheet" href="fretboard.css">
 </head>
 <body>
     <div id="navbar"></div>
@@ -25,7 +27,11 @@
                     <div class="card-body">
                         <div id="chord-display" class="chord-display">
                             <div id="chord-name">--</div>
-                            <div id="notes-display" style="display: none; margin-top: 10px;"></div>
+                            <div id="target-notes-display" style="margin-top: 10px;"></div>
+                            <div id="detected-notes-display" style="margin-top: 5px; display: none;"></div>
+                            <div class="text-center mt-2">
+                                <button id="listen-btn" class="btn btn-lg">Listen</button>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -1,0 +1,79 @@
+/* Chord detector page styles */
+
+.chord-display {
+    background-color: var(--bg1);
+    border-radius: 8px;
+    padding: 40px 20px;
+    text-align: center;
+}
+
+#chord-name {
+    font-size: 4rem;
+    font-weight: bold;
+    color: var(--fg);
+    margin-bottom: 15px;
+}
+
+#chord-name.detected-correct {
+    color: var(--green);
+}
+
+#chord-name.detected-incorrect {
+    color: var(--red);
+}
+
+/* Chord dropdown style (match tuner) */
+#chord-dropdown {
+    background-color: var(--bg1) !important;
+    color: var(--fg) !important;
+    border: 1px solid var(--bg2) !important;
+    font-size: 1.2rem;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    width: auto;
+    min-width: 180px;
+    max-width: 240px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#chord-dropdown option {
+    text-align: center;
+}
+
+#chord-dropdown:focus {
+    border-color: var(--yellow) !important;
+    outline: none;
+}
+
+/* Listen button styling */
+#listen-btn {
+    background-color: var(--bg2) !important;
+    border: 2px solid var(--fg-gray) !important;
+    color: var(--fg) !important;
+    font-size: 1.1rem;
+    padding: 10px 40px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+#listen-btn:hover {
+    background-color: var(--fg-gray) !important;
+    color: var(--bg) !important;
+    border-color: var(--yellow) !important;
+}
+
+#listen-btn.listening {
+    background-color: var(--green) !important;
+    border-color: var(--green) !important;
+    color: var(--bg) !important;
+}
+
+#listen-btn.listening:hover {
+    background-color: var(--red) !important;
+    border-color: var(--red) !important;
+}

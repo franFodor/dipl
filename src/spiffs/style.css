@@ -1,46 +1,3 @@
-#tuning-dropdown {
-    background-color: var(--bg1) !important;
-    color: var(--fg) !important;
-    border: 1px solid var(--bg2) !important;
-    font-size: 1.2rem;
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    width: auto;
-    min-width: 180px;
-    max-width: 240px;
-    text-align: center;
-    background: var(--bg1);
-    position: relative;
-}
-
-#tuning-dropdown::-ms-expand {
-    display: none;
-}
-
-/* Custom arrow */
-#tuning-dropdown {
-    background-position: right 1rem center;
-    background-size: 1.2em;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-}
-#tuning-dropdown option {
-    text-align: center;
-}
-
-#tuning-dropdown option.separator {
-    color: var(--fg-gray) !important;
-    background: var(--bg2) !important;
-    font-size: 0.9rem;
-    text-align: center;
-}
-
-#tuning-dropdown:focus {
-    border-color: var(--yellow) !important;
-    outline: none;
-}
 /* Gruvbox Dark Color Scheme */
 :root {
     --bg: #282828;
@@ -89,71 +46,7 @@ body {
     border: 1px solid var(--bg2);
 }
 
-/* Meter styling */
-#meter {
-    position: relative;
-    width: 300px;
-    height: 150px;
-    margin: 40px auto;
-    border-top-left-radius: 300px;
-    border-top-right-radius: 300px;
-    border: 2px solid var(--fg-gray);
-    border-bottom: none;
-    overflow: hidden;
-    background-color: var(--bg1);
-}
-
-#needle {
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    width: 4px;
-    height: 140px;
-    background: var(--orange);
-    transform-origin: bottom center;
-    transform: rotate(0deg);
-    transition: transform 0.1s linear;
-}
-
-#green-zone {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: var(--green);
-    clip-path: polygon(50% 100%, 40% 0%, 60% 0%);
-    opacity: 0.3;
-}
-
-#center-line {
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    width: 2px;
-    height: 100px;
-    background-color: var(--fg-gray);
-    transform: translateX(-50%);
-    opacity: 0.5;
-}
-
-/* Readout display */
-#readout {
-    background-color: var(--bg1);
-    border: 1px solid var(--bg2);
-    border-radius: 8px;
-    padding: 20px;
-    margin: 20px auto;
-    max-width: 300px;
-}
-
-#note {
-    font-size: 4rem;
-    font-weight: bold;
-    color: var(--yellow);
-    margin-bottom: 10px;
-}
-
+/* Dropdown items */
 .dropdown-item {
     color: var(--fg);
 }
@@ -177,45 +70,6 @@ body {
 .btn-secondary:hover {
     background-color: var(--fg-gray);
     color: var(--bg);
-}
-
-/* Tuning display */
-#tuning-display {
-    background-color: var(--bg1);
-    border: 1px solid var(--bg2);
-    border-radius: 8px;
-    padding: 15px;
-}
-
-.string-indicator {
-    color: var(--fg-gray);
-    margin: 5px;
-}
-
-.string-indicator.active {
-    color: var(--green);
-    font-weight: bold;
-}
-
-/* Scale page */
-.scale-note {
-    display: inline-block;
-    background-color: var(--bg1);
-    border: 1px solid var(--bg2);
-    border-radius: 4px;
-    padding: 8px 16px;
-    margin: 5px;
-    color: var(--fg);
-}
-
-.scale-note.root {
-    background-color: var(--orange);
-    color: var(--bg);
-}
-
-.scale-note.interval {
-    background-color: var(--blue);
-    color: var(--fg);
 }
 
 /* Cards */
@@ -256,175 +110,23 @@ a:hover {
     color: var(--yellow);
 }
 
-/* Chord detector page */
-.chord-display {
+/* Scale page */
+.scale-note {
+    display: inline-block;
     background-color: var(--bg1);
-    border-radius: 8px;
-    padding: 40px 20px;
-    text-align: center;
-}
-
-#chord-name {
-    font-size: 4rem;
-    font-weight: bold;
+    border: 1px solid var(--bg2);
+    border-radius: 4px;
+    padding: 8px 16px;
+    margin: 5px;
     color: var(--fg);
-    margin-bottom: 15px;
 }
 
-#chord-name.detected {
-    color: var(--green);
+.scale-note.root {
+    background-color: var(--orange);
+    color: var(--bg);
 }
 
-/* Chord dropdown style (match tuner) */
-#chord-dropdown {
-    background-color: var(--bg1) !important;
-    color: var(--fg) !important;
-    border: 1px solid var(--bg2) !important;
-    font-size: 1.2rem;
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    margin-bottom: 1rem;
-    width: auto;
-    min-width: 180px;
-    max-width: 240px;
-    text-align: center;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-}
-#chord-dropdown option {
-    text-align: center;
-}
-#chord-dropdown:focus {
-    border-color: var(--yellow) !important;
-    outline: none;
-}
-
-/* Fretboard grid styles */
-#fretboard {
-    display: grid;
-    grid-template-columns: 32px repeat(12, 48px); /* first column for X/O */
-    grid-template-rows: repeat(5, 32px);
-    gap: 0;
-    background: var(--bg1);
-    border: 4px solid var(--bg2);
-    border-radius: 8px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.18);
-    min-width: 640px;
-    min-height: 192px;
-    position: relative;
-    padding-top: 20px;
-}
-.fret-cell {
-    width: 48px;
-    height: 32px;
-    background: none;
-    border-right: 2px solid var(--fg-gray);
-    border-top: 2px solid var(--fg-gray);
-    box-sizing: border-box;
-    position: relative;
-}
-.fret-label {
-    font-size: 0.9rem;
-    color: var(--fg-gray);
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translate(-50%, 0);
-    margin-top: 10px;
-}
-
-.fret-cell.last-row {
-    border-right: none;
-    height: 5px;
-}
-
-.fret-circle {
-    width: 26px;
-    height: 26px;
-    background: var(--blue);
-    border-radius: 50%;
-    position: absolute;
-    left: 50%;
-    top: 0;
-    transform: translate(-50%, -50%);
-    box-shadow: 0 1px 6px rgba(0,0,0,0.18);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.scale-note.interval {
+    background-color: var(--blue);
     color: var(--fg);
-    font-weight: bold;
-    font-size: 1.2rem;
-    z-index: 2;
-    border: 2px solid var(--fg);
-}
-
-.fret-xo-circle {
-    top: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 1rem;
-}
-
-.fret-circle-target {
-    background: var(--blue);
-}
-
-.fret-circle-correct {
-    background: var(--green) !important;
-}
-
-.fret-circle-incorrect {
-    background: var(--red) !important;
-}
-.fret-xo {
-    height: 32px;
-    width: 32px;
-    transform: translateY(-16px);
-    vertical-align: bottom;
-    text-align: center;
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.fret-xo .fret-circle {
-    position: static;
-    transform: none;
-    margin: 0 auto;
-}
-
-/* Played note highlighting */
-.note-circle {
-    width: 26px;
-    height: 26px;
-    background: var(--green);
-    border-radius: 50%;
-    position: absolute;
-    left: 50%;
-    top: 0;
-    transform: translate(-50%, -50%);
-    box-shadow: 0 1px 6px rgba(0,0,0,0.18);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--fg);
-    font-weight: bold;
-    font-size: 0.9rem;
-    z-index: 1;
-    border: 2px solid var(--fg);
-}
-
-.note-circle-correct {
-    background: var(--green);
-}
-
-.note-circle-incorrect {
-    background: var(--red);
-}
-
-#fretboard-container {
-    position: relative;
-    height: 240px;
 }
