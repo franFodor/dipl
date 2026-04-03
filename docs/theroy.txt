@@ -1,0 +1,280 @@
+Here's a structured breakdown for your thesis theoretical sections:
+
+  ---
+  Digital Signal Processing — General Theory
+
+  Sampling & Quantization
+  - Continuous audio → discrete samples via ADC (Nyquist: sample rate must be ≥ 2× max frequency)
+  - Your system: 16 kHz sample rate → can represent up to 8 kHz (covers guitar range ~80–1300 Hz)
+
+  Discrete Fourier Transform (DFT) & FFT
+  - DFT converts a time-domain signal into its frequency components
+  - FFT is a fast algorithm (O(N log N) vs O(N²)) for computing the DFT
+  - Result: complex spectrum — real + imaginary parts per frequency bin
+  - Frequency resolution = sample_rate / FFT_size = 16000 / 4096 ≈ 3.9 Hz/bin
+
+  Windowing
+  - FFT assumes the signal is periodic — abrupt edges cause spectral leakage
+  - Window functions (Hann, Hamming, Blackman) taper the signal to zero at edges
+  - Trade-off: reduces leakage at the cost of slightly wider frequency peaks
+
+  Magnitude Spectrum
+  - From complex FFT output: magnitude = sqrt(real² + imag²)
+  - Represents energy at each frequency bin
+
+  ---
+  DSP Used in This Project
+
+  ┌─────────────────────────────────┬──────────────────┬─────────────────────────────────────────┐
+  │            Technique            │      Where       │                 Purpose                 │
+  ├─────────────────────────────────┼──────────────────┼─────────────────────────────────────────┤
+  │ Hann window                     │ main.c:116       │ Suppress spectral leakage before FFT    │
+  ├─────────────────────────────────┼──────────────────┼─────────────────────────────────────────┤
+  │ FFT (4096-pt)                   │ main.c:122–125   │ Time → frequency domain conversion      │
+  ├─────────────────────────────────┼──────────────────┼─────────────────────────────────────────┤
+  │ Magnitude spectrum              │ main.c:128–132   │ Extract energy per frequency bin        │
+  ├─────────────────────────────────┼──────────────────┼─────────────────────────────────────────┤
+  │ Dynamic range compression       │ tuning.c:117–120 │ mag^0.65 — reduces harmonic dominance   │
+  ├─────────────────────────────────┼──────────────────┼─────────────────────────────────────────┤
+  │ Harmonic Product Spectrum (HPS) │ tuning.c:40–100  │ Fundamental frequency detection         │
+  ├─────────────────────────────────┼──────────────────┼─────────────────────────────────────────┤
+  │ Quadratic interpolation         │ tuning.c:20–38   │ Sub-bin peak refinement                 │
+  ├─────────────────────────────────┼──────────────────┼─────────────────────────────────────────┤
+  │ Octave correction               │ tuning.c:79–96   │ Prevents octave-error false positives   │
+  ├─────────────────────────────────┼──────────────────┼─────────────────────────────────────────┤
+  │ Pitch-class energy accumulation │ chord.c:90–122   │ Aggregates FFT energy into 12 semitones │
+  ├─────────────────────────────────┼──────────────────┼─────────────────────────────────────────┤
+  │ RMS amplitude                   │ chord.c:18–24    │ Silence detection threshold             │
+  └─────────────────────────────────┴──────────────────┴─────────────────────────────────────────┘
+
+  HPS in detail — multiplies the magnitude spectrum with decimated versions of itself at integer harmonic ratios (×2, ×3, ×4). The fundamental frequency is where all harmonics align, producing
+  the tallest peak. Formula: HPS(ω) = ∏ |X(r·ω)| for r = 1..4
+
+  Quadratic interpolation — since FFT bins are discrete, the true peak lies between bins. Using three adjacent bin values α (left), β (peak), γ (right): p = (α - γ) / (2(γ - 2β + α)), giving a
+  sub-bin frequency shift.
+
+  ---
+  Music Theory — General
+
+  Equal Temperament
+  - The standard 12-tone equal temperament (12-TET) divides the octave into 12 equal semitones
+  - Each semitone = frequency ratio of 2^(1/12) ≈ 1.0595
+  - Reference pitch: A4 = 440 Hz (ISO 16 standard)
+
+  MIDI Note Numbering
+  - Maps every pitch to an integer: MIDI = 69 + 12 · log₂(f / 440)
+  - A4 = 69, C4 (middle C) = 60
+
+  Pitch Class
+  - Groups all octave equivalents of a note: C, C#, D, D#, E, F, F#, G, G#, A, A#, B (0–11)
+  - pitch_class = MIDI mod 12
+
+  Cents
+  - Logarithmic measure of tuning deviation: 100 cents = 1 semitone
+  - Formula: cents = 1200 · log₂(f_measured / f_reference)
+  - Tuner accuracy convention: ±5–10 cents is "in tune"
+
+  Interval Structure of Chords
+  - Major triad: root + major 3rd (+4 semitones) + perfect 5th (+7 semitones)
+  - Minor triad: root + minor 3rd (+3 semitones) + perfect 5th (+7 semitones)
+
+  ---
+  Music Theory Used in This Project
+
+  ┌───────────────────────────────────┬───────────────┬──────────────────────────────────────────────────────┐
+  │              Concept              │     Where     │                    Implementation                    │
+  ├───────────────────────────────────┼───────────────┼──────────────────────────────────────────────────────┤
+  │ Chromatic scale (28 notes, E2–B4) │ tuning.c:4–12 │ Lookup table of reference frequencies                │
+  ├───────────────────────────────────┼───────────────┼──────────────────────────────────────────────────────┤
+  │ Cents calculation                 │ tuning.c:110  │ 1200 · log₂(f / f_note)                              │
+  ├───────────────────────────────────┼───────────────┼──────────────────────────────────────────────────────┤
+  │ MIDI formula                      │ chord.c:32    │ Maps FFT bin frequency → pitch class 0–11            │
+  ├───────────────────────────────────┼───────────────┼──────────────────────────────────────────────────────┤
+  │ Major chord template              │ chord.h:26–30 │ {1,0,0,0,1,0,0,1,0,0,0,0} — intervals 0,4,7          │
+  ├───────────────────────────────────┼───────────────┼──────────────────────────────────────────────────────┤
+  │ Minor chord template              │ chord.h:31–35 │ {1,0,0,1,0,0,0,1,0,0,0,0} — intervals 0,3,7          │
+  ├───────────────────────────────────┼───────────────┼──────────────────────────────────────────────────────┤
+  │ Template rolling                  │ chord.c:46–50 │ Rotates template across 12 root positions            │
+  ├───────────────────────────────────┼───────────────┼──────────────────────────────────────────────────────┤
+  │ Dot-product matching              │ chord.c:55–61 │ Cosine similarity between energy vector and template │
+  └───────────────────────────────────┴───────────────┴──────────────────────────────────────────────────────┘
+
+  The chord detection pipeline is essentially template matching in pitch-class space: the 12-bin pitch-class energy vector (built from FFT) is compared against all 24 chord templates (12 roots
+  × major/minor) using dot product. The chord with the highest score above threshold 0.4 is declared the result.
+
+  ---
+  Suggested Thesis Section Structure
+
+  1. Digital Signal Processing Fundamentals — sampling theorem, DFT/FFT, windowing, spectral leakage
+  2. Pitch Detection Methods — autocorrelation, HPS, YIN (briefly compare), why HPS was chosen
+  3. Music Theory — equal temperament, cents, MIDI, pitch class, chord structure
+  4. System Architecture — pipeline from I2S capture → FFT → tuning/chord branches
+  5. Chord Detection via Template Matching — pitch-class chroma vector, template design, dot-product scoring
+
+  Want me to go deeper on any specific section, or help draft the actual thesis text for any of these topics?
+
+✻ Cooked for 1m 22s
+
+❯ ok well can you use paragprahs and more details instead of bullet points
+
+● Digital Signal Processing — General Theory
+
+  Sampling and Quantization
+
+  Audio signals in the physical world are continuous — they exist as smooth, uninterrupted variations in air pressure over time. Before a digital system like an ESP32 can process them, they
+  must be converted into a sequence of discrete numerical values, a process called sampling. At regular intervals determined by the sample rate, the instantaneous amplitude of the signal is
+  measured and stored as a number. The fundamental constraint governing this process is the Nyquist-Shannon sampling theorem, which states that the sample rate must be at least twice the
+  highest frequency present in the signal. If this condition is violated, a phenomenon called aliasing occurs, where high-frequency components "fold back" into the audible range and corrupt the
+   signal with false frequencies that were never actually there.
+
+  Your system samples audio at 16,000 Hz (16 kHz), meaning 16,000 amplitude values are captured every second. This allows faithful representation of frequencies up to 8 kHz, which comfortably
+  covers the entire range of a guitar — the lowest standard-tuned string (E2) sits at approximately 82 Hz, and the highest practical harmonic content for chord and pitch detection falls well
+  below 8 kHz. The microphone used, the INMP441, is an I2S MEMS microphone that outputs 32-bit samples directly over a digital interface, so there is no separate ADC step — the quantization is
+  handled inside the microphone itself.
+
+  The Discrete Fourier Transform and FFT
+
+  Once audio is represented as a sequence of samples, the central challenge in pitch and chord detection is determining which frequencies are present in the signal and how much energy each one
+  carries. A guitar string vibrating at 440 Hz produces not just a single sine wave at that frequency, but also a series of harmonics at integer multiples — 880 Hz, 1320 Hz, 1760 Hz, and so on.
+   The relative strengths of these harmonics give each instrument its characteristic timbre, but they also make raw time-domain analysis very difficult. The tool that transforms the problem
+  into a tractable form is the Discrete Fourier Transform (DFT).
+
+  The DFT takes a block of N time-domain samples and produces N complex-valued frequency-domain coefficients. Each coefficient corresponds to a specific frequency bin and encodes both the
+  amplitude and phase of that frequency component in the signal. The frequency resolution — how far apart adjacent bins are — is determined by the formula Δf = sample_rate / N. For this system,
+   with N = 4096 samples at 16 kHz, each bin is approximately 3.9 Hz wide. This is fine-grained enough to distinguish closely spaced musical notes, since even adjacent semitones near the bottom
+   of the guitar range are separated by several Hz.
+
+  The naive computation of the DFT requires O(N²) operations, which would be far too slow for real-time embedded processing. The Fast Fourier Transform (FFT) is an algorithm that computes the
+  exact same result in O(N log N) operations by exploiting symmetry and recursive factoring of the DFT. This is what makes real-time frequency analysis feasible on a microcontroller. The
+  ESP-DSP library provides an optimized FFT implementation (dsps_fft2r_fc32) tailored for the ESP32's hardware, along with a bit-reversal step (dsps_bit_rev_fc32) and a complex-to-real
+  conversion (dsps_cplx2reC_fc32) that unpacks the output into a usable form.
+
+  Windowing and Spectral Leakage
+
+  The FFT is computed on a finite block of samples — in this case 4096 samples at a time. Mathematically, this is equivalent to multiplying the infinite audio signal by a rectangular window: a
+  function that is 1 inside the block and 0 everywhere outside. The problem is that this sharp cutoff at the block boundaries introduces a discontinuity. Even if the original signal was a
+  perfect, pure sine wave, the abrupt start and end of the rectangular window make it appear to contain a whole range of nearby frequencies that were never actually present. This contamination
+  of the spectrum is called spectral leakage, and it smears energy from strong frequency components across neighbouring bins, potentially masking weaker peaks.
+
+  The standard solution is to multiply the audio samples by a window function that smoothly tapers to zero at both ends of the block before applying the FFT. This project uses the Hann window,
+  defined as w(n) = 0.5 · (1 - cos(2πn / (N-1))). It is a popular choice because it provides a good trade-off: leakage is substantially reduced, and while the main lobe of each frequency peak
+  becomes slightly wider than with a rectangular window, the sidelobes — the spurious energy at distant frequencies — are dramatically suppressed. In practice, Hann windowing significantly
+  improves the accuracy of frequency peak detection, which is critical for both pitch detection and chord analysis. In the code, the Hann window is precomputed once at startup
+  (dsps_wind_hann_f32) and each audio sample is multiplied by the corresponding window coefficient before the FFT is applied (main.c:116).
+
+  Magnitude Spectrum
+
+  The raw output of the FFT is an array of complex numbers, each with a real and an imaginary part representing the cosine and sine components of that frequency. For pitch and chord detection,
+  the phase information is not needed — what matters is how much energy is present at each frequency, regardless of phase. This is obtained by computing the magnitude of each complex value:
+  magnitude[i] = sqrt(real[i]² + imag[i]²). The resulting array is the magnitude spectrum, where each entry tells you the amplitude of a particular frequency component in the signal. This is
+  the starting point for all subsequent analysis in both the tuning and chord detection pipelines.
+
+  ---
+  DSP Used in This Project
+
+  Harmonic Product Spectrum
+
+  Once the magnitude spectrum is available, the tuning pipeline needs to identify the fundamental frequency of the note being played. This is non-trivial because, as described above, a plucked
+  guitar string produces energy at its fundamental and at multiple harmonics. In some cases, particularly on lower strings, the fundamental itself may be weak while the second or third harmonic
+   dominates. Naive peak-picking — simply finding the tallest spike in the spectrum — would then return the wrong octave or even an incorrect note.
+
+  The algorithm used to solve this is the Harmonic Product Spectrum (HPS). The core insight is that if a signal has a fundamental frequency f₀, then its harmonics will appear at 2f₀, 3f₀, 4f₀,
+  and so on. If you take the magnitude spectrum and multiply it by a version of itself compressed by a factor of 2 (i.e., every second sample), then at frequency f₀ the compressed version
+  contributes the energy of 2f₀. Compress by 3, and the contribution is from 3f₀. When you multiply several such compressed copies together, the only frequency where they all simultaneously
+  have significant energy is the fundamental f₀, because that is the only frequency where the spectrum, its second harmonic, third harmonic, and so on all align. The formula is HPS(ω) = ∏ |X(r
+  · ω)| for r = 1 through 4. The peak of the resulting HPS array corresponds to the estimated fundamental frequency. In this project, the search is constrained to the range 70–600 Hz, which
+  covers the full range of standard guitar notes.
+
+  Dynamic Range Compression
+
+  Before HPS is applied, the magnitude spectrum is passed through a non-linear compression stage: each magnitude value is raised to the power of 0.65 (tuning.c:117–120). This is a form of
+  dynamic range compression. The purpose is to prevent very strong harmonics from completely overwhelming the weaker ones in the HPS product. Without compression, a single very tall harmonic
+  spike could dominate the multiplication and cause the HPS to peak at the wrong frequency. By compressing the dynamic range, the relative differences between harmonics are reduced, making the
+  HPS more robust and giving all harmonics a more equal contribution to the product.
+
+  Quadratic Interpolation
+
+  The FFT gives you frequency information only at discrete bin locations, separated by ~3.9 Hz in this system. The true fundamental frequency of a guitar note may lie between two bins, and
+  simply reading off the bin index of the HPS peak introduces a quantization error of up to half a bin width, which translates to roughly ±2 Hz. For a tuner, this is unacceptable — accurate
+  tuning requires precision in the range of a few cents, where 1 cent is one hundredth of a semitone.
+
+  The solution is quadratic interpolation, which fits a parabola through the three magnitude values surrounding the peak bin and finds the analytical maximum of that parabola. If the three
+  adjacent values are α (left of peak), β (peak bin), and γ (right of peak), the fractional bin offset of the true peak is given by p = (α - γ) / (2 · (γ - 2β + α)). The true frequency is then
+  f = (peak_bin + p) · frequency_resolution. This simple calculation refines the frequency estimate significantly, allowing sub-bin accuracy without any additional computational cost.
+
+  Octave Correction
+
+  Even with HPS, there are cases where the algorithm can return a frequency that is exactly one octave too high — typically when the second harmonic happens to be much stronger than the
+  fundamental and the HPS erroneously peaks there. To handle this, the code includes an octave correction step: after the HPS peak is found, the algorithm checks whether the energy at half the
+  detected frequency is significant (within a threshold of 5% of the HPS peak value). If it is, that lower frequency is accepted as the true fundamental instead. This catch prevents a common
+  class of errors without meaningfully increasing complexity.
+
+  Pitch-Class Energy Accumulation
+
+  The chord detection pipeline takes a different approach to the magnitude spectrum. Rather than searching for a single dominant frequency, it needs to identify which of the 12 pitch classes of
+   the chromatic scale are simultaneously present. To do this, each FFT bin's frequency is converted to a MIDI note number using the formula MIDI = 69 + 12 · log₂(f / 440), and then the pitch
+  class is extracted with pitch_class = MIDI mod 12. The energy (magnitude) of that bin is added to the corresponding entry in a 12-element accumulator array. This process is repeated for all
+  FFT bins in the range 70–1500 Hz, producing a chroma vector — a compact 12-element representation of the spectral energy distributed across the chromatic scale, regardless of octave. To
+  improve stability and reduce the effect of transients, energy is accumulated over 5 consecutive frames before a chord decision is made.
+
+  ---
+  Music Theory — General
+
+  Equal Temperament
+
+  Western music is organised around a system called 12-tone equal temperament (12-TET), in which the octave — the interval between a frequency and its double — is divided into exactly 12 equal
+  steps called semitones. "Equal" here means that the frequency ratio between any two adjacent semitones is identical: multiplying a frequency by 2^(1/12) ≈ 1.0595 raises it by exactly one
+  semitone. This uniformity is what makes it possible to play music in any key on a fixed-pitch instrument like a guitar or piano — all keys are structurally identical, just transposed. The
+  internationally agreed reference pitch is A4 = 440 Hz, standardised as ISO 16, which anchors the entire system.
+
+  Cents
+
+  While semitones are the basic unit of musical pitch, they are too coarse for precise tuning measurement. A finer unit is the cent, defined as one hundredth of a semitone. Since pitch
+  perception is approximately logarithmic, the cent is also a logarithmic measure: cents = 1200 · log₂(f_measured / f_reference). A deviation of ±50 cents represents the midpoint between two
+  adjacent notes, and experienced musicians and tuners typically consider anything within ±5–10 cents to be acceptably in tune. The cents value is the natural output of a tuner: it tells the
+  player not just which note they are closest to, but how far off they are and in which direction.
+
+  MIDI Note Numbering
+
+  The MIDI standard assigns a unique integer to every musical pitch across the practical range of instruments. Middle C (C4) is MIDI note 60, and A4 = 440 Hz is MIDI note 69. The relationship
+  between frequency and MIDI note number is MIDI = 69 + 12 · log₂(f / 440). This formula is central to the chord detection algorithm because it provides a clean, universal way to convert any
+  arbitrary frequency from the FFT into a discrete position in the musical pitch space.
+
+  Pitch Class
+
+  In tonal music theory, notes that differ by one or more octaves are considered to be the "same" note in a functional sense — an A in any octave has the same harmonic role. This equivalence is
+   captured by the concept of pitch class: the set of all octave equivalents of a note. There are exactly 12 pitch classes, one for each semitone in the octave: C, C#, D, D#, E, F, F#, G, G#,
+  A, A#, B, numbered 0 through 11. The pitch class of any MIDI note is simply MIDI mod 12. Collapsing the full pitch spectrum into 12 pitch classes dramatically simplifies chord recognition,
+  since a C major chord sounds like a C major chord whether it is voiced in the first, second, or third octave.
+
+  Chord Structure
+
+  A triad is the most fundamental chord type in Western harmony, consisting of three notes built from a root by stacking specific intervals. A major triad is built by taking a root note, adding
+   a major third (4 semitones above the root) and a perfect fifth (7 semitones above the root). It is perceived as bright and stable. A minor triad replaces the major third with a minor third
+  (3 semitones above the root), while keeping the perfect fifth, producing a darker, more melancholic sound. These two chord qualities account for the vast majority of chords encountered in
+  popular and rock music, making them a practical and sufficient starting point for a real-time chord detector.
+
+  ---
+  Music Theory Used in This Project
+
+  Note Lookup Table and Cents Calculation
+
+  The tuning pipeline maintains a lookup table of 28 reference frequencies covering the range E2 to B4 (tuning.c:4–12), which encompasses all notes reachable in standard and common alternate
+  guitar tunings. Once the HPS and quadratic interpolation have produced an estimated fundamental frequency, the code searches this table for the closest match and computes the cents offset
+  using 1200 · log₂(f_detected / f_note). A positive value means the note is sharp, negative means flat, and zero means perfectly in tune. This value is sent to the web interface where it
+  drives the tuner needle visualization.
+
+  Chroma Vector and Template Matching
+
+  The chord detection system expresses both the observed audio and the theoretical chord definitions in a common 12-dimensional pitch-class space, which makes the comparison straightforward and
+   computationally cheap. Each of the 24 possible major and minor triads (12 root notes × 2 qualities) is represented as a binary 12-element vector where 1s mark the pitch classes belonging to
+  that chord. For example, C major has pitch classes 0 (C), 4 (E), and 7 (G) active, so its template is {1,0,0,0,1,0,0,1,0,0,0,0}. Rather than storing all 24 templates explicitly, the code
+  stores one major and one minor template and generates all transpositions by rotating the array — shifting every element one position to the right moves from C to C#, and so on.
+
+  The similarity between the observed chroma vector and each chord template is measured using the dot product: score = Σ chroma[i] · template[i]. If the observed chroma vector has high energy
+  in exactly the pitch classes that belong to a given chord, the dot product will be large. If the energy is spread across unrelated pitch classes, the dot product will be small. The chord with
+   the highest dot product score, provided it exceeds a minimum threshold of 0.4 (to reject noise and ambiguous signals), is declared the detected chord. This approach is essentially a
+  simplified form of template-based pattern matching, or geometrically speaking, a projection of the observed spectrum onto the chord template vectors.
+
+  ---
+  This gives you solid material for most of the theoretical chapter. Want me to help draft the hardware section, the implementation section, or refine any of these parts further?
