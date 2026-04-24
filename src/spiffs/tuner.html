@@ -10,28 +10,42 @@
 <body>
     <div id="navbar"></div>
 
-    <div class="container mt-4">
+    <div class="container mt-4 mb-4">
         <h2 class="text-center">Guitar Tuner</h2>
-        <div class="row justify-content-center">
+
+        <div class="row justify-content-center mt-3">
             <div class="col-md-4">
                 <select id="tuning-dropdown" class="form-select form-select-lg bg-dark text-light"></select>
             </div>
         </div>
-        <div class="text-center mt-4">
-            <div id="tuning-display"></div>
-            <div id="meter">
-                <div id="green-zone"></div>
-                <div id="needle"></div>
-                <div id="center-line"></div>
+
+        <div class="row justify-content-center mt-3">
+            <div class="col-md-6">
+                <div id="tuning-display"></div>
             </div>
-            <div id="readout">
-                <div id="note">--</div>
-                <div id="cents">0 cents</div>
+        </div>
+        <div class="row justify-content-center mt-3">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h4>Detection</h4>
+                    </div>
+                    <div class="card-body">
+                        <div id="meter">
+                            <div id="green-zone"></div>
+                            <div id="needle"></div>
+                            <div id="center-line"></div>
+                        </div>
+                        <div id="readout">
+                            <div id="note">--</div>
+                            <div id="cents">0 cents</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    
     <script src="jquery.js"></script>
     <script src="popper.js"></script>
     <script src="bootstrap.js"></script>

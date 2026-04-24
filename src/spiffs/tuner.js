@@ -1,10 +1,5 @@
 const A4 = 440;
 
-const noteTable = [
-    "C", "C#", "D", "D#", "E", "F",
-    "F#", "G", "G#", "A", "A#", "B"
-];
-
 const noteToMidi = {
     "E2": 40, "A2": 45, "D3": 50, "G3": 55, "B3": 59, "E4": 64,
     "D2": 38, "G2": 43, "C3": 48, "F3": 53, "A3": 57
@@ -17,14 +12,43 @@ const tunings = {
 };
 
 let currentTuning = "Standard";
+let lastDetectedTime = null;
+const SILENCE_TIMEOUT_MS = 5000;
+
+let tuneStringIdx = -1;
+let tuneStart = null;
 
 const TEST_MODE = true; // Set to false to use real ESP data
 
 const tuningNames = Object.keys(tunings);
 let selectedTuning = tuningNames[0];
+
 function noteToFrequency(noteName) {
     const midiNote = noteToMidi[noteName];
     return A4 * Math.pow(2, (midiNote - 69) / 12);
+}
+
+function findBestMatchingString(detectedNote, detectedFreq) {
+    const tuning = tunings[currentTuning];
+    let bestIdx = -1;
+    let bestDiff = Infinity;
+    tuning.forEach((stringNote, idx) => {
+        if (stringNote.replace(/\d+$/, '') === detectedNote) {
+            const diff = Math.abs(noteToFrequency(stringNote) - detectedFreq);
+            if (diff < bestDiff) { bestDiff = diff; bestIdx = idx; }
+        }
+    });
+    return bestIdx;
+}
+
+function resetStringIndicators() {
+    const tuning = tunings[currentTuning];
+    tuning.forEach((_, idx) => {
+        const el = document.getElementById('string-' + idx);
+        if (el) el.className = 'string-indicator';
+    });
+    tuneStringIdx = -1;
+    tuneStart = null;
 }
 
 function selectTuning(tuningName) {
@@ -35,25 +59,26 @@ function selectTuning(tuningName) {
 
 function updateTuningDisplay() {
     const tuning = tunings[currentTuning];
-    
+
     if (currentTuning === 'Custom') {
         document.getElementById('tuning-display').innerHTML = '<div class="text-center">TODO</div>';
         return;
     }
-    
-    // Display target frequencies for each string
-    const freqHtml = '<div class="text-center">' +
-        tuning.map(note => '<strong>' + note + '</strong>').join(' | ') +
+
+    const html = '<div class="text-center">' +
+        tuning.map((note, idx) =>
+            '<span class="string-indicator" id="string-' + idx + '">' + note + '</span>'
+        ).join(' | ') +
         '</div>';
-    document.getElementById('tuning-display').innerHTML = freqHtml;
+    document.getElementById('tuning-display').innerHTML = html;
+    tuneStringIdx = -1;
+    tuneStart = null;
 }
 
 function renderTuningDropdown() {
     const dropdown = document.getElementById('tuning-dropdown');
     dropdown.innerHTML = '';
-    // Restore original options without separators
-    const options = ["Standard", "D Standard", "Drop D", "Custom"];
-    options.forEach(name => {
+    ["Standard", "D Standard", "Drop D", "Custom"].forEach(name => {
         const option = document.createElement('option');
         option.value = name;
         option.textContent = name;
@@ -65,44 +90,74 @@ function renderTuningDropdown() {
 
 function handleTuningDropdownChange(e) {
     selectTuning(e.target.value);
-    updateTuningDisplay();
 }
+
 async function update() {
     let j;
     if (TEST_MODE) {
-        j = {frequency: 111.0, note: "A", cents: 2.5}; // Test data
+        j = {frequency: 111.0, note: "A", cents: 2.5};
     } else {
         const r = await fetch("/api/note");
         j = await r.json();
     }
 
-    if (j.frequency <= 0) return;
+    if (j.frequency <= 0) {
+        if (lastDetectedTime !== null && Date.now() - lastDetectedTime > SILENCE_TIMEOUT_MS) {
+            document.getElementById("note").textContent = "--";
+            document.getElementById("cents").textContent = "0 cents";
+            document.getElementById("needle").style.transform = "rotate(0deg)";
+            lastDetectedTime = null;
+            resetStringIndicators();
+        }
+        tuneStringIdx = -1;
+        tuneStart = null;
+        return;
+    }
 
+    lastDetectedTime = Date.now();
     document.getElementById("note").textContent = j.note;
 
-    let tuneMessage = "";
-    if (j.cents < -10) {
-        tuneMessage = "Tune up";
-    } else if (j.cents > 10) {
-        tuneMessage = "Tune down";
-    } else {
-        tuneMessage = "In tune";
-    }
-    
-    document.getElementById("cents").textContent =
-        j.cents.toFixed(1) + " cents - " + tuneMessage;
+    let tuneMessage = j.cents < -10 ? "Tune up" : j.cents > 10 ? "Tune down" : "In tune";
+    document.getElementById("cents").textContent = j.cents.toFixed(1) + " cents - " + tuneMessage;
 
-    // clamp needle to ±50 cents
     const clamped = Math.max(-50, Math.min(50, j.cents));
-    const angle = clamped * 1.0; // ±50°
-    document.getElementById("needle").style.transform =
-        `rotate(${angle}deg)`;
+    document.getElementById("needle").style.transform = `rotate(${clamped}deg)`;
+
+    // String indicator highlighting
+    const matchedIdx = findBestMatchingString(j.note, j.frequency);
+    const inTune = Math.abs(j.cents) <= 10;
+    const tuning = tunings[currentTuning];
+
+    tuning.forEach((_, idx) => {
+        const el = document.getElementById('string-' + idx);
+        if (!el) return;
+
+        if (idx === matchedIdx) {
+            if (inTune) {
+                if (tuneStringIdx !== idx) {
+                    tuneStringIdx = idx;
+                    tuneStart = Date.now();
+                }
+                if (Date.now() - tuneStart >= 1000) {
+                    el.className = 'string-indicator tuned';
+                }
+            } else {
+                tuneStringIdx = -1;
+                tuneStart = null;
+                if (!el.classList.contains('tuned')) {
+                    el.className = 'string-indicator out-of-tune';
+                }
+            }
+        } else {
+            if (!el.classList.contains('tuned')) {
+                el.className = 'string-indicator';
+            }
+        }
+    });
 }
 
 setInterval(update, 50);
-// Initialization now handled in $(document).ready())
 
-// Close dropdown when clicking outside
 $(document).on('click', function(e) {
     if (!$(e.target).closest('.dropdown').length) {
         $('.dropdown-menu').removeClass('show');

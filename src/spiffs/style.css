@@ -128,7 +128,19 @@ body {
     border-bottom: 1px solid var(--bg2);
 }
 
-.navbar-brand, .nav-link {
+.navbar-brand {
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: var(--fg) !important;
+    letter-spacing: 0.5px;
+}
+
+.navbar-brand:hover {
+    color: var(--yellow) !important;
+    text-decoration: none;
+}
+
+.nav-link {
     color: var(--fg) !important;
 }
 
@@ -193,7 +205,9 @@ body {
 /* Cards */
 .card {
     background-color: var(--bg1);
-    border: 1px solid var(--bg2);
+    border: 4px solid var(--bg2);
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.18);
 }
 
 .card-header {
@@ -274,9 +288,10 @@ a:hover {
 
 /* Mobile navbar */
 @media (max-width: 991.98px) {
-    .navbar-toggler  { order: 1; }
-    .theme-toggle    { order: 2; }
-    .navbar-collapse { order: 3; }
+    .navbar-toggler  { order: 1; width: 72px; }
+    .navbar-brand    { order: 2; flex: 1; margin-left: 18px; text-align: center; }
+    .theme-toggle    { order: 3; width: 72px; margin-left: 0; padding-right: 0; justify-content: center; }
+    .navbar-collapse { order: 4; width: 100%; }
 
     .navbar-collapse .nav-link {
         margin: 4px 8px;

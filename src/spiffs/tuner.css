@@ -3,7 +3,7 @@
 #tuning-dropdown {
     background-color: var(--bg1) !important;
     color: var(--fg) !important;
-    border: 1px solid var(--bg2) !important;
+    border: 4px solid var(--bg2) !important;
     font-size: 1.2rem;
     padding: 0.5rem 1rem;
     border-radius: 8px;
@@ -53,7 +53,7 @@
     margin: 40px auto;
     border-top-left-radius: 300px;
     border-top-right-radius: 300px;
-    border: 2px solid var(--fg-gray);
+    border: 4px solid var(--bg2);
     border-bottom: none;
     overflow: hidden;
     background-color: var(--bg1);
@@ -95,12 +95,8 @@
 
 /* Readout display */
 #readout {
-    background-color: var(--bg1);
-    border: 1px solid var(--bg2);
-    border-radius: 8px;
-    padding: 20px;
-    margin: 20px auto;
-    max-width: 300px;
+    padding: 10px 20px 20px;
+    margin: 0 auto;
 }
 
 #note {
@@ -113,17 +109,23 @@
 /* Tuning display */
 #tuning-display {
     background-color: var(--bg1);
-    border: 1px solid var(--bg2);
+    border: 4px solid var(--bg2);
     border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.18);
     padding: 15px;
 }
 
 .string-indicator {
     color: var(--fg-gray);
     margin: 5px;
+    font-weight: bold;
+    font-size: 1.1rem;
 }
 
-.string-indicator.active {
+.string-indicator.tuned {
     color: var(--green);
-    font-weight: bold;
+}
+
+.string-indicator.out-of-tune {
+    color: var(--red);
 }
