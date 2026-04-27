@@ -5,7 +5,6 @@
 #include <math.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "freertos/queue.h"
 #include "driver/i2s_std.h"
 #include "driver/i2s_common.h"
 #include "esp_system.h"
@@ -29,54 +28,24 @@
 
 #define SILENCE_THRESHOLD  0.002f
 
-#define I2S_READER_TASK_PRIO   5
-#define I2S_READER_STACK_SIZE  5000
 #define PROCESSOR_TASK_PRIO    4
 #define PROCESSOR_STACK_SIZE   70000
 
-QueueHandle_t audio_data_queue;
-
 static i2s_chan_handle_t rx_handle;
 
-typedef struct {
-    int32_t *samples;
-    size_t sample_count;
-} audio_buffer_t;
-
-static void i2s_reader_task(void* pvParameters) {
-    int32_t* sample_buffer = (int32_t*)malloc(FFT_SIZE * sizeof(int32_t));
-    if (sample_buffer == NULL) {
-        ESP_LOGE("I2S", "Failed to allocate sample buffer");
-        vTaskDelete(NULL);
-    }
-
-    audio_buffer_t audio_buf;
-    audio_buf.samples = sample_buffer;
-
-    while (1) {
-        size_t bytes_read = 0;
-        i2s_channel_read(rx_handle, audio_buf.samples,
-                         FFT_SIZE * sizeof(int32_t), &bytes_read, portMAX_DELAY);
-        audio_buf.sample_count = bytes_read / sizeof(int32_t);
-        xQueueSend(audio_data_queue, &audio_buf, portMAX_DELAY);
-    }
-
-    free(sample_buffer);
-}
-
 static void audio_processor_task(void* pvParameters) {
-    float* audio_buffer = (float*)malloc(FFT_SIZE * sizeof(float));
-    float* hps          = (float*)malloc(FFT_SIZE / 2 * sizeof(float));
-    float* magnitude    = (float*)malloc(FFT_SIZE / 2 * sizeof(float));
+    int32_t* sample_buffer = (int32_t*)malloc(FFT_SIZE * sizeof(int32_t));
+    float*   audio_buffer  = (float*)malloc(FFT_SIZE * sizeof(float));
+    float*   hps           = (float*)malloc(FFT_SIZE / 2 * sizeof(float));
+    float*   magnitude     = (float*)malloc(FFT_SIZE / 2 * sizeof(float));
 
-    if (!audio_buffer || !hps || !magnitude) {
+    if (!sample_buffer || !audio_buffer || !hps || !magnitude) {
         ESP_LOGE("Processor", "Buffer allocation failed");
         vTaskDelete(NULL);
     }
 
     float hann_window[FFT_SIZE];
     float fft_buffer[FFT_SIZE * 2];
-    audio_buffer_t audio_buf;
     chord_result_t chord_result;
 
     dsps_fft2r_init_fc32(NULL, FFT_SIZE);
@@ -86,25 +55,36 @@ static void audio_processor_task(void* pvParameters) {
     chord_init();
 
     while (1) {
-        xQueueReceive(audio_data_queue, &audio_buf, portMAX_DELAY);
+        // Sleep until a web request arrives
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-        // RMS check on raw samples — skip FFT entirely if silent
+        // Read one fresh frame directly from I2S
+        size_t bytes_read = 0;
+        i2s_channel_read(rx_handle, sample_buffer,
+                         FFT_SIZE * sizeof(int32_t), &bytes_read, pdMS_TO_TICKS(1000));
+        int n = (int)(bytes_read / sizeof(int32_t));
+
+        // RMS silence check — skip FFT if quiet
         float rms = 0.0f;
-        int n = (int)audio_buf.sample_count;
         for (int i = 0; i < n; i++) {
-            float s = (float)audio_buf.samples[i] / (float)INT32_MAX;
+            float s = (float)sample_buffer[i] / (float)INT32_MAX;
             rms += s * s;
         }
         rms = sqrtf(rms / n);
 
         if (rms < SILENCE_THRESHOLD) {
-            vTaskDelay(pdMS_TO_TICKS(10));
+            if (web_server_get_mode() == DETECTION_MODE_NOTE)
+                web_server_update_note("None", 0.0f, 0.0f);
+            else
+                web_server_update_chord("None", NULL, 0);
+            web_server_signal_result_ready();
             continue;
         }
 
+        // Apply Hann window and build complex FFT input
         for (int i = 0; i < FFT_SIZE; i++) {
             float sample = (i < n)
-                ? ((float)audio_buf.samples[i] / (float)INT32_MAX)
+                ? ((float)sample_buffer[i] / (float)INT32_MAX)
                 : 0.0f;
             audio_buffer[i]       = sample * hann_window[i];
             fft_buffer[2 * i]     = audio_buffer[i];
@@ -123,7 +103,6 @@ static void audio_processor_task(void* pvParameters) {
 
         if (web_server_get_mode() == DETECTION_MODE_NOTE) {
             note_frequency_analysis(magnitude, hps);
-            vTaskDelay(pdMS_TO_TICKS(10));
         } else {
             chord_detect(magnitude, audio_buffer, &chord_result);
             if (chord_result.valid) {
@@ -131,22 +110,26 @@ static void audio_processor_task(void* pvParameters) {
                     (const char (*)[8])chord_result.notes,
                     chord_result.note_count);
                 ESP_LOGI("chord", "Detected: %s", chord_result.name);
+            } else {
+                web_server_update_chord("None", NULL, 0);
             }
-            vTaskDelay(pdMS_TO_TICKS(50));
         }
+
+        web_server_signal_result_ready();
     }
 
+    free(sample_buffer);
+    free(audio_buffer);
     free(hps);
     free(magnitude);
-    free(audio_buffer);
 }
 
-static void setup_i2s() {
+static void setup_i2s(void) {
     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
     i2s_new_channel(&chan_cfg, NULL, &rx_handle);
 
     i2s_std_config_t std_cfg = {
-        .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(SAMPLE_RATE),
+        .clk_cfg  = I2S_STD_CLK_DEFAULT_CONFIG(SAMPLE_RATE),
         .slot_cfg = I2S_STD_MSB_SLOT_DEFAULT_CONFIG(SAMPLE_BITS, I2S_SLOT_MODE_MONO),
         .gpio_cfg = {
             .mclk = I2S_GPIO_UNUSED,
@@ -171,17 +154,14 @@ static void spiffs_init(void) {
     esp_vfs_spiffs_register(&conf);
 }
 
-void app_main() {
+void app_main(void) {
     spiffs_init();
     wifi_ap_start();
     setup_i2s();
-
-    audio_data_queue = xQueueCreate(2, sizeof(audio_buffer_t));
     web_server_start();
 
+    TaskHandle_t proc_handle;
     xTaskCreate(audio_processor_task, "Audio_Processor",
-                PROCESSOR_STACK_SIZE, NULL, PROCESSOR_TASK_PRIO, NULL);
-
-    xTaskCreate(i2s_reader_task, "I2S_Reader",
-                I2S_READER_STACK_SIZE, NULL, I2S_READER_TASK_PRIO, NULL);
+                PROCESSOR_STACK_SIZE, NULL, PROCESSOR_TASK_PRIO, &proc_handle);
+    web_server_set_processor_task(proc_handle);
 }

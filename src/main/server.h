@@ -10,6 +10,7 @@
 #include "esp_http_server.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
+#include "freertos/task.h"
 
 #define WIFI_AP_SSID      "ESP_GUITAR_TUNER"
 #define WIFI_AP_PASS      "12345678"
@@ -28,5 +29,7 @@ detection_mode_t web_server_get_mode(void);
 
 void web_server_update_note(const char *note, float frequency, float cents);
 void web_server_update_chord(const char *chord, const char notes[][8], int note_count);
+void web_server_set_processor_task(TaskHandle_t handle);
+void web_server_signal_result_ready(void);
 
 #endif // SERVER_H
