@@ -31,15 +31,13 @@ static esp_err_t test_handler(httpd_req_t *req) {
 }
 
 static esp_err_t file_get_handler(httpd_req_t *req) {
+    // Map the URI to a SPIFFS path; root URL serves index.html
     char path[128];
-
     if (strcmp(req->uri, "/") == 0) {
         strcpy(path, "/spiffs/index.html");
     } else {
-        snprintf(path, sizeof(path),
-                 "/spiffs%.*s",
-                 (int)(sizeof(path) - 8),
-                 req->uri);
+        snprintf(path, sizeof(path), "/spiffs%.*s",
+                 (int)(sizeof(path) - 8), req->uri);
     }
 
     FILE *f = fopen(path, "r");
@@ -48,10 +46,12 @@ static esp_err_t file_get_handler(httpd_req_t *req) {
         return ESP_FAIL;
     }
 
-    if (strstr(path, ".html")) httpd_resp_set_type(req, "text/html");
-    else if (strstr(path, ".css")) httpd_resp_set_type(req, "text/css");
-    else if (strstr(path, ".js")) httpd_resp_set_type(req, "application/javascript");
+    // Set Content-Type based on file extension
+    if (strstr(path, ".html"))      httpd_resp_set_type(req, "text/html");
+    else if (strstr(path, ".css"))  httpd_resp_set_type(req, "text/css");
+    else if (strstr(path, ".js"))   httpd_resp_set_type(req, "application/javascript");
 
+    // Stream file contents in 1 KB chunks to avoid large stack buffers
     char buf[1024];
     size_t n;
     while ((n = fread(buf, 1, sizeof(buf), f)) > 0) {
@@ -105,16 +105,15 @@ detection_mode_t web_server_get_mode(void) {
 void web_server_update_note(const char *note, float frequency, float cents) {
     if (!note_mutex) return;
 
+    // Update state and rebuild the cached JSON string under the mutex
     xSemaphoreTake(note_mutex, portMAX_DELAY);
     strncpy(current_note, note, sizeof(current_note) - 1);
     current_note[sizeof(current_note) - 1] = 0;
     current_freq = frequency;
     current_cents = cents;
-
     snprintf(cached_note_response, sizeof(cached_note_response),
              "{\"note\":\"%s\",\"frequency\":%.2f,\"cents\":%.1f}",
              current_note, current_freq, current_cents);
-
     xSemaphoreGive(note_mutex);
 }
 
@@ -122,15 +121,17 @@ void web_server_update_chord(const char *chord, const char notes[][8], int note_
     if (!chord_mutex) return;
 
     xSemaphoreTake(chord_mutex, portMAX_DELAY);
+
+    // Copy chord name and individual notes into the cached state
     strncpy(current_chord, chord, sizeof(current_chord) - 1);
     current_chord[sizeof(current_chord) - 1] = 0;
-
     current_note_count = note_count;
     for (int i = 0; i < note_count && i < MAX_CHORD_NOTES; i++) {
         strncpy(current_notes[i], notes[i], 7);
         current_notes[i][7] = '\0';
     }
 
+    // Build the notes JSON array, then embed it in the full response string
     char notes_json[128] = "[]";
     if (note_count > 0) {
         char* ptr = notes_json;
@@ -141,7 +142,6 @@ void web_server_update_chord(const char *chord, const char notes[][8], int note_
         }
         ptr += sprintf(ptr, "]");
     }
-
     snprintf(cached_chord_response, sizeof(cached_chord_response),
              "{\"chord\":\"%s\",\"notes\":%s}",
              current_chord, notes_json);
@@ -153,6 +153,8 @@ void web_server_start(void) {
     note_mutex  = xSemaphoreCreateMutex();
     chord_mutex = xSemaphoreCreateMutex();
 
+    // Start the HTTP server with wildcard URI matching so the file handler
+    // catches any path that the more specific API handlers don't claim first
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.uri_match_fn = httpd_uri_match_wildcard;
 
@@ -196,6 +198,7 @@ void web_server_start(void) {
 }
 
 void wifi_ap_start(void) {
+    // Initialise NVS; erase and retry if the partition is full or has a version mismatch
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES ||
         ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -203,22 +206,22 @@ void wifi_ap_start(void) {
         nvs_flash_init();
     }
 
+    // Bring up the TCP/IP stack and event loop before configuring WiFi
     esp_netif_init();
     esp_event_loop_create_default();
-
     esp_netif_create_default_wifi_ap();
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     esp_wifi_init(&cfg);
 
+    // Configure the soft-AP with SSID, password, channel, and max clients
     wifi_config_t ap_cfg = {
         .ap = {
-            .channel = WIFI_AP_CHANNEL,
+            .channel        = WIFI_AP_CHANNEL,
             .max_connection = WIFI_AP_MAX_CONN,
-            .authmode = WIFI_AUTH_WPA_WPA2_PSK
+            .authmode       = WIFI_AUTH_WPA_WPA2_PSK
         }
     };
-
     strncpy((char *)ap_cfg.ap.ssid, WIFI_AP_SSID, sizeof(ap_cfg.ap.ssid));
     strncpy((char *)ap_cfg.ap.password, WIFI_AP_PASS, sizeof(ap_cfg.ap.password));
     ap_cfg.ap.ssid_len = strlen(WIFI_AP_SSID);

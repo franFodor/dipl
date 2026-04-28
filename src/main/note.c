@@ -28,6 +28,7 @@ static float quadratic_interpolation(float* magnitudes, int peak_bin) {
     if (peak_bin <= 0 || peak_bin >= (FFT_SIZE/2 - 1))
         return (float)peak_bin * SAMPLE_RATE / FFT_SIZE;
 
+    // Fit a parabola to the three bins around the peak to get sub-bin frequency resolution
     float gamma = magnitudes[peak_bin - 1];
     float beta  = magnitudes[peak_bin];
     float alpha = magnitudes[peak_bin + 1];
@@ -44,14 +45,16 @@ static float harmonic_product_spectrum(float* magnitudes, int half_size, float* 
     float freq_res = (float)SAMPLE_RATE / FFT_SIZE;
     const int R = 4;
 
+    // Multiply downsampled copies of the spectrum together (R harmonics)
+    // Each harmonic reinforces bins where a true fundamental is present
     for (int i = 0; i < half_size; i++) hps[i] = 1.0f;
-
     for (int r = 1; r <= R; r++) {
         int limit = half_size / r;
         for (int i = 0; i < limit; i++) hps[i] *= (magnitudes[i * r] + 1e-12f);
         for (int i = limit; i < half_size; i++) hps[i] = 0.0f;
     }
 
+    // Search for the strongest peak within the guitar frequency range
     int min_bin = (int)floorf(70.0f / freq_res);
     int max_bin = (int)ceilf(1200.0f / freq_res);
     if (min_bin < 1) min_bin = 1;
@@ -87,6 +90,8 @@ const char* note_find_closest(float frequency, float* cents_offset) {
 }
 
 void note_frequency_analysis(float* magnitudes, float* hps) {
+    // Compress the dynamic range of the magnitude spectrum before HPS so that
+    // quieter harmonics still contribute without being drowned out by loud ones
     for (int i = 1; i < FFT_SIZE/2; i++)
         magnitudes[i] = powf(magnitudes[i] + 1e-20f, 0.65f);
 
@@ -99,24 +104,24 @@ void note_frequency_analysis(float* magnitudes, float* hps) {
         float cents;
         const char* note = note_find_closest(freq, &cents);
 
+        // Require the same note for NOTE_STABILITY_FRAMES consecutive frames
+        // before publishing to avoid flickering on transients
         if (strcmp(note, pending_note) == 0) {
-            // Same note again — increment stability counter, capped to avoid overflow
             if (pending_count < NOTE_STABILITY_FRAMES)
                 pending_count++;
         } else {
-            // New candidate — reset and wait for it to stabilise
             strncpy(pending_note, note, sizeof(pending_note) - 1);
             pending_note[sizeof(pending_note) - 1] = '\0';
             pending_count = 1;
         }
 
-        // Only publish once the note has been stable for enough frames.
-        // After that, keep publishing every frame so freq/cents stay live.
+        // Once stable, keep publishing every frame so freq/cents stay live
         if (pending_count >= NOTE_STABILITY_FRAMES) {
             web_server_update_note(note, freq, cents);
             ESP_LOGI("note", "NOTE: %s  %.2f Hz cent: %.2f", note, freq, cents);
         }
     } else {
+        // After 20 silent frames clear state to avoid stale note display
         no_detection_count++;
         if (no_detection_count > 20) {
             last_freq = 0.0f;

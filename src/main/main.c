@@ -54,6 +54,7 @@ static void i2s_reader_task(void *pvParameters) {
     audio_buffer_t audio_buf;
     audio_buf.samples = sample_buffer;
 
+    // Continuously read one hop of samples and push to the processor queue
     while (1) {
         size_t bytes_read = 0;
         i2s_channel_read(rx_handle, audio_buf.samples,
@@ -94,7 +95,7 @@ static void audio_processor_task(void *pvParameters) {
 
         int n = (int)audio_buf.sample_count; // == HOP_SIZE
 
-        // Slide ring buffer left and append new hop
+        // Slide the ring buffer left by one hop and append the new samples at the end
         memmove(ring_buffer, ring_buffer + n, (FFT_SIZE - n) * sizeof(float));
         for (int i = 0; i < n; i++) {
             ring_buffer[FFT_SIZE - n + i] =
@@ -108,17 +109,13 @@ static void audio_processor_task(void *pvParameters) {
             rms += s * s;
         }
         rms = sqrtf(rms / n);
+        if (rms < SILENCE_THRESHOLD) continue;
 
-        if (rms < SILENCE_THRESHOLD) {
-            continue;
-        }
-
-        // Apply Hann window and build complex FFT input
+        // Apply Hann window, then run FFT and compute magnitude spectrum
         for (int i = 0; i < FFT_SIZE; i++) {
             fft_buffer[2 * i]     = ring_buffer[i] * hann_window[i];
             fft_buffer[2 * i + 1] = 0.0f;
         }
-
         dsps_fft2r_fc32(fft_buffer, FFT_SIZE);
         dsps_bit_rev_fc32(fft_buffer, FFT_SIZE);
         dsps_cplx2reC_fc32(fft_buffer, FFT_SIZE);
@@ -129,6 +126,7 @@ static void audio_processor_task(void *pvParameters) {
             magnitude[i] = sqrtf(real * real + imag * imag);
         }
 
+        // Dispatch to the active detector
         if (web_server_get_mode() == DETECTION_MODE_NOTE) {
             note_frequency_analysis(magnitude, hps);
         } else {
