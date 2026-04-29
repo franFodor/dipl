@@ -1,15 +1,24 @@
-const A4 = 440;
-
 const noteToMidi = {
-    "E2": 40, "A2": 45, "D3": 50, "G3": 55, "B3": 59, "E4": 64,
-    "D2": 38, "G2": 43, "C3": 48, "F3": 53, "A3": 57
+    "C2": 36, "C#2": 37, "D2": 38, "D#2": 39, "E2": 40, "F2": 41, "F#2": 42,
+    "G2": 43, "G#2": 44, "A2": 45, "A#2": 46, "B2": 47,
+    "C3": 48, "C#3": 49, "D3": 50, "D#3": 51, "E3": 52, "F3": 53, "F#3": 54,
+    "G3": 55, "G#3": 56, "A3": 57, "A#3": 58, "B3": 59,
+    "C4": 60, "C#4": 61, "D4": 62, "D#4": 63, "E4": 64, "F4": 65, "F#4": 66,
+    "G4": 67, "G#4": 68, "A4": 69, "A#4": 70, "B4": 71
 };
+
+const CUSTOM_NOTES = Object.keys(noteToMidi);
+const CUSTOM_DEFAULT = ["E2", "A2", "D3", "G3", "B3", "E4"];
 
 const tunings = {
     "Standard": ["E2", "A2", "D3", "G3", "B3", "E4"],
     "D Standard": ["D2", "G2", "C3", "F3", "A3", "D3"],
     "Drop D": ["D2", "A2", "D3", "G3", "B3", "E4"]
 };
+
+let customTuning  = JSON.parse(localStorage.getItem('customTuning')  || 'null') || [...CUSTOM_DEFAULT];
+let customApplied = localStorage.getItem('customTuningApplied') === 'true';
+tunings['Custom'] = [...customTuning];
 
 let currentTuning = "Standard";
 let lastDetectedTime = null;
@@ -18,25 +27,6 @@ const SILENCE_TIMEOUT_MS = 5000;
 let tuneStringIdx = -1;
 let tuneStart = null;
 let tunedStrings = new Set();
-let audioCtx = null;
-
-function playDing() {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc  = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.type = 'sine';
-    osc.frequency.value = 880;
-    const t = audioCtx.currentTime;
-    gain.gain.setValueAtTime(0, t);
-    gain.gain.linearRampToValueAtTime(0.4, t + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
-    osc.start(t);
-    osc.stop(t + 0.35);
-}
-
-const TEST_MODE = true; // Set to false to use real ESP data
 
 const tuningNames = Object.keys(tunings);
 let selectedTuning = tuningNames[0];
@@ -48,10 +38,11 @@ function noteToFrequency(noteName) {
 
 function findBestMatchingString(detectedNote, detectedFreq) {
     const tuning = tunings[currentTuning];
+    const detectedPitch = detectedNote.replace(/\d+$/, '');
     let bestIdx = -1;
     let bestDiff = Infinity;
     tuning.forEach((stringNote, idx) => {
-        if (stringNote.replace(/\d+$/, '') === detectedNote) {
+        if (stringNote.replace(/\d+$/, '') === detectedPitch) {
             const diff = Math.abs(noteToFrequency(stringNote) - detectedFreq);
             if (diff < bestDiff) { bestDiff = diff; bestIdx = idx; }
         }
@@ -77,21 +68,83 @@ function selectTuning(tuningName) {
 }
 
 function updateTuningDisplay() {
-    const tuning = tunings[currentTuning];
+    tuneStringIdx = -1;
+    tuneStart = null;
+    tunedStrings.clear();
 
     if (currentTuning === 'Custom') {
-        document.getElementById('tuning-display').innerHTML = '<div class="text-center">TODO</div>';
+        const labels = ['6', '5', '4', '3', '2', '1'];
+
+        const appliedHtml = `<div id="custom-applied-view" class="text-center"${customApplied ? '' : ' style="display:none"'}>` +
+            customTuning.map((note, idx) =>
+                `<span class="string-indicator" id="string-${idx}">${note}</span>`
+            ).join(' | ') +
+            '</div>';
+
+        let editorHtml = `<div id="custom-editor-view" class="custom-tuning-grid"${customApplied ? ' style="display:none"' : ''}>`;
+        customTuning.forEach((note, idx) => {
+            const opts = CUSTOM_NOTES.map(n =>
+                `<option value="${n}"${n === note ? ' selected' : ''}>${n}</option>`
+            ).join('');
+            editorHtml += `<div class="custom-string-col">
+                <div class="custom-string-label">${labels[idx]}</div>
+                <select class="custom-string-select" data-string="${idx}">${opts}</select>
+            </div>`;
+        });
+        editorHtml += '</div>';
+
+        const buttonsHtml = `<div class="text-center mt-2">
+            <button id="custom-apply-btn" class="btn"${customApplied ? ' style="display:none"' : ''}>Apply</button>
+            <button id="custom-edit-btn" class="btn btn-secondary"${customApplied ? '' : ' style="display:none"'}>Edit</button>
+        </div>`;
+
+        document.getElementById('tuning-display').innerHTML = appliedHtml + editorHtml + buttonsHtml;
+
+        document.querySelectorAll('.custom-string-select').forEach(sel => {
+            sel.addEventListener('change', function() {
+                const idx = parseInt(this.dataset.string);
+                customTuning[idx] = this.value;
+                tunings['Custom'] = [...customTuning];
+                localStorage.setItem('customTuning', JSON.stringify(customTuning));
+                const span = document.getElementById('string-' + idx);
+                if (span) span.textContent = this.value;
+                tuneStringIdx = -1;
+                tuneStart = null;
+                tunedStrings.clear();
+            });
+        });
+
+        document.getElementById('custom-apply-btn').addEventListener('click', function() {
+            customApplied = true;
+            localStorage.setItem('customTuningApplied', 'true');
+            document.getElementById('custom-applied-view').style.display = '';
+            document.getElementById('custom-editor-view').style.display = 'none';
+            this.style.display = 'none';
+            document.getElementById('custom-edit-btn').style.display = 'inline-block';
+            tuneStringIdx = -1;
+            tuneStart = null;
+            tunedStrings.clear();
+        });
+
+        document.getElementById('custom-edit-btn').addEventListener('click', function() {
+            customApplied = false;
+            localStorage.setItem('customTuningApplied', 'false');
+            document.getElementById('custom-applied-view').style.display = 'none';
+            document.getElementById('custom-editor-view').style.display = '';
+            this.style.display = 'none';
+            document.getElementById('custom-apply-btn').style.display = 'inline-block';
+        });
+
         return;
     }
 
+    const tuning = tunings[currentTuning];
     const html = '<div class="text-center">' +
         tuning.map((note, idx) =>
             '<span class="string-indicator" id="string-' + idx + '">' + note + '</span>'
         ).join(' | ') +
         '</div>';
     document.getElementById('tuning-display').innerHTML = html;
-    tuneStringIdx = -1;
-    tuneStart = null;
 }
 
 function renderTuningDropdown() {

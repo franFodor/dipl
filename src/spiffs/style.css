@@ -88,6 +88,21 @@ body.light-theme {
     user-select: none;
 }
 
+#sound-icon {
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 6px;
+    border: 1px solid var(--bg2);
+    background-color: var(--bg1);
+    transition: color 0.15s, border-color 0.15s, background-color 0.15s;
+}
+
+#sound-icon:hover {
+    color: var(--fg);
+    border-color: var(--fg-gray);
+    background-color: var(--bg2);
+}
+
 .theme-switch {
     position: relative;
     display: inline-block;

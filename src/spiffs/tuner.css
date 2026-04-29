@@ -90,3 +90,80 @@
 .string-indicator.out-of-tune {
     color: var(--red);
 }
+
+/* Custom tuning editor */
+.custom-tuning-grid {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+}
+
+.custom-string-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.custom-string-label {
+    font-size: 0.72rem;
+    color: var(--fg-gray);
+}
+
+.custom-string-select {
+    background-color: var(--bg1);
+    color: var(--fg);
+    border: 1px solid var(--bg2);
+    border-radius: 6px;
+    padding: 0.25rem 1.4rem 0.25rem 0.4rem;
+    font-size: 0.85rem;
+    width: 68px;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23a89984' stroke-width='2' d='M2 5l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.35rem center;
+    background-size: 12px 10px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+}
+
+.custom-string-select:hover { border-color: var(--fg-gray); }
+.custom-string-select:focus { border-color: var(--yellow); outline: none; }
+body.light-theme .custom-string-select {
+    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%237c6f64' stroke-width='2' d='M2 5l6 6 6-6'/%3E%3C/svg%3E");
+}
+
+
+#custom-apply-btn {
+    background-color: var(--bg2) !important;
+    border: 2px solid var(--fg-gray) !important;
+    color: var(--fg) !important;
+    font-size: 1.1rem;
+    padding: 10px 40px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+#custom-apply-btn:hover {
+    background-color: var(--fg-gray) !important;
+    color: var(--bg) !important;
+    border-color: var(--yellow) !important;
+}
+
+#custom-edit-btn {
+    background-color: var(--bg2) !important;
+    border: 2px solid var(--fg-gray) !important;
+    color: var(--fg) !important;
+    font-size: 1.1rem;
+    padding: 10px 40px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+#custom-edit-btn:hover {
+    background-color: var(--fg-gray) !important;
+    color: var(--bg) !important;
+    border-color: var(--yellow) !important;
+}

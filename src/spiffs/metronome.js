@@ -14,7 +14,6 @@ let isPlaying  = false;
 let beatIndex  = 0;       // next beat to schedule
 let nextBeatTime = 0;     // AudioContext time of that beat
 let schedulerTimer = null;
-let audioCtx   = null;
 // Schedule beats this far ahead so the audio clock handles timing precisely.
 // JS setInterval alone drifts noticeably at high BPMs.
 const LOOKAHEAD         = 0.1;  // seconds

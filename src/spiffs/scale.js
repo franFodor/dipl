@@ -1,5 +1,3 @@
-const TEST_MODE = false;
-
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 
 const SCALES = {
@@ -25,23 +23,6 @@ let positionIdx      = 0;    // which position we're currently showing
 let isListening      = false;
 let pollInterval     = null;
 let lastDetectedNote = null;
-let audioCtx         = null;
-
-function playDing() {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc  = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.type = 'sine';
-    osc.frequency.value = 880;
-    const t = audioCtx.currentTime;
-    gain.gain.setValueAtTime(0, t);
-    gain.gain.linearRampToValueAtTime(0.4, t + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
-    osc.start(t);
-    osc.stop(t + 0.35);
-}
 
 function getPitchClass(noteName) {
     return noteName.replace(/\d+$/, '');
