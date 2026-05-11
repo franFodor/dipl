@@ -1,16 +1,27 @@
 const TEST_MODE = false;
 const A4 = 440;
 
-let audioCtx = null;
-let soundsEnabled = localStorage.getItem('sounds') !== 'false';
+let audioCtx   = null;
+let masterGain = null;
+let masterVolume = parseFloat(localStorage.getItem('volume') || '1');
+
+function _ensureAudio() {
+    if (!audioCtx) {
+        audioCtx   = new (window.AudioContext || window.webkitAudioContext)();
+        masterGain = audioCtx.createGain();
+        masterGain.connect(audioCtx.destination);
+    }
+    masterGain.gain.value = masterVolume;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+}
 
 function playDing() {
-    if (!soundsEnabled) return;
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (masterVolume <= 0) return;
+    _ensureAudio();
     const osc  = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.connect(gain);
-    gain.connect(audioCtx.destination);
+    gain.connect(masterGain);
     osc.type = 'sine';
     osc.frequency.value = 880;
     const t = audioCtx.currentTime;

@@ -1,5 +1,6 @@
 #include "server.h"
 #include "chord.h"
+#include "wifi_manager.h"
 
 static httpd_handle_t server = NULL;
 
@@ -96,6 +97,60 @@ static esp_err_t api_mode_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
+/* ---------- WiFi API HANDLERS ---------- */
+static esp_err_t api_wifi_status_handler(httpd_req_t *req) {
+    char buf[256];
+    wifi_manager_status_json(buf, sizeof(buf));
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_sendstr(req, buf);
+    return ESP_OK;
+}
+
+static esp_err_t api_wifi_scan_handler(httpd_req_t *req) {
+    char buf[1200];
+    wifi_manager_scan_json(buf, sizeof(buf));
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_sendstr(req, buf);
+    return ESP_OK;
+}
+
+static esp_err_t api_wifi_connect_handler(httpd_req_t *req) {
+    char body[200] = {0};
+    int len = httpd_req_recv(req, body, sizeof(body) - 1);
+    if (len <= 0) {
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Missing body");
+        return ESP_FAIL;
+    }
+    body[len] = '\0';
+
+    // Simple extraction: find "ssid":"..." and "pass":"..."
+    char *sp = strstr(body, "\"ssid\":\"");
+    char *pp = strstr(body, "\"pass\":\"");
+    if (!sp) {
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Missing ssid");
+        return ESP_FAIL;
+    }
+    sp += 8;
+    char ssid[33] = {0}, pass[65] = {0};
+    for (int i = 0; i < 32 && sp[i] && sp[i] != '"'; i++) ssid[i] = sp[i];
+    if (pp) {
+        pp += 8;
+        for (int i = 0; i < 64 && pp[i] && pp[i] != '"'; i++) pass[i] = pp[i];
+    }
+
+    wifi_manager_connect(ssid, pass);
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_sendstr(req, "{\"status\":\"connecting\"}");
+    return ESP_OK;
+}
+
+static esp_err_t api_wifi_disconnect_handler(httpd_req_t *req) {
+    wifi_manager_disconnect();
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_sendstr(req, "{\"status\":\"ap\"}");
+    return ESP_OK;
+}
+
 /* ---------- PUBLIC API ---------- */
 detection_mode_t web_server_get_mode(void) {
     return current_mode;
@@ -160,7 +215,8 @@ void web_server_start(void) {
     // esp_http_server matches in registration order, so API handlers must be
     // registered before the "/*" wildcard handler below.
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    config.uri_match_fn = httpd_uri_match_wildcard;
+    config.uri_match_fn   = httpd_uri_match_wildcard;
+    config.max_uri_handlers = 12;
 
     httpd_start(&server, &config);
 
@@ -194,48 +250,35 @@ void web_server_start(void) {
         .handler  = test_handler
     };
 
+    httpd_uri_t api_wifi_status = {
+        .uri     = "/api/wifi/status",
+        .method  = HTTP_GET,
+        .handler = api_wifi_status_handler
+    };
+    httpd_uri_t api_wifi_scan = {
+        .uri     = "/api/wifi/scan",
+        .method  = HTTP_POST,
+        .handler = api_wifi_scan_handler
+    };
+    httpd_uri_t api_wifi_connect = {
+        .uri     = "/api/wifi/connect",
+        .method  = HTTP_POST,
+        .handler = api_wifi_connect_handler
+    };
+    httpd_uri_t api_wifi_disconnect = {
+        .uri     = "/api/wifi/disconnect",
+        .method  = HTTP_POST,
+        .handler = api_wifi_disconnect_handler
+    };
+
     httpd_register_uri_handler(server, &api_note);
     httpd_register_uri_handler(server, &api_chord);
     httpd_register_uri_handler(server, &api_mode);
+    httpd_register_uri_handler(server, &api_wifi_status);
+    httpd_register_uri_handler(server, &api_wifi_scan);
+    httpd_register_uri_handler(server, &api_wifi_connect);
+    httpd_register_uri_handler(server, &api_wifi_disconnect);
     httpd_register_uri_handler(server, &test);
     httpd_register_uri_handler(server, &files);
 }
 
-void wifi_ap_start(void) {
-    // Initialise NVS; erase and retry if the partition is full or has a version mismatch
-    esp_err_t ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES ||
-        ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        nvs_flash_erase();
-        nvs_flash_init();
-    }
-
-    // Bring up the TCP/IP stack and event loop before configuring WiFi
-    esp_netif_init();
-    esp_event_loop_create_default();
-    esp_netif_create_default_wifi_ap();
-
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    esp_wifi_init(&cfg);
-
-    // Configure the soft-AP with SSID, password, channel, and max clients
-    wifi_config_t ap_cfg = {
-        .ap = {
-            .channel        = WIFI_AP_CHANNEL,
-            .max_connection = WIFI_AP_MAX_CONN,
-            .authmode       = WIFI_AUTH_WPA_WPA2_PSK
-        }
-    };
-    strncpy((char *)ap_cfg.ap.ssid, WIFI_AP_SSID, sizeof(ap_cfg.ap.ssid));
-    strncpy((char *)ap_cfg.ap.password, WIFI_AP_PASS, sizeof(ap_cfg.ap.password));
-    ap_cfg.ap.ssid_len = strlen(WIFI_AP_SSID);
-
-    if (strlen(WIFI_AP_PASS) == 0)
-        ap_cfg.ap.authmode = WIFI_AUTH_OPEN;
-
-    esp_wifi_set_mode(WIFI_MODE_AP);
-    esp_wifi_set_config(WIFI_IF_AP, &ap_cfg);
-    esp_wifi_start();
-
-    ESP_LOGI(TAG, "WiFi AP started");
-}

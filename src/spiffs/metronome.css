@@ -56,9 +56,45 @@
 }
 
 .bpm-slider {
+    -webkit-appearance: none;
+    appearance: none;
     width: 100%;
-    accent-color: var(--yellow);
+    height: 4px;
+    border-radius: 2px;
+    background: linear-gradient(to right, var(--yellow) var(--bpm-pct, 40%), var(--bg2) var(--bpm-pct, 40%));
+    outline: none;
     cursor: pointer;
+}
+
+.bpm-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--yellow);
+    cursor: pointer;
+}
+
+.bpm-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--yellow);
+    border: none;
+    cursor: pointer;
+}
+
+.bpm-slider::-moz-range-progress {
+    background: var(--yellow);
+    height: 4px;
+    border-radius: 2px;
+}
+
+.bpm-slider::-moz-range-track {
+    background: var(--bg2);
+    height: 4px;
+    border-radius: 2px;
 }
 
 #start-btn {

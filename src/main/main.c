@@ -17,6 +17,7 @@
 #include "note.h"
 #include "chord.h"
 #include "server.h"
+#include "wifi_manager.h"
 
 #define SAMPLE_RATE     16000
 #define SAMPLE_BITS     I2S_DATA_BIT_WIDTH_32BIT
@@ -174,7 +175,7 @@ static void spiffs_init(void) {
 
 void app_main(void) {
     spiffs_init();
-    wifi_ap_start();
+    wifi_manager_init();
     setup_i2s();
 
     audio_data_queue = xQueueCreate(2, sizeof(audio_buffer_t));

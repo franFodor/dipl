@@ -26,7 +26,7 @@ function scheduleClick(beat, time) {
     const osc  = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.connect(gain);
-    gain.connect(audioCtx.destination);
+    gain.connect(masterGain);
 
     const accent = TIME_SIGS[timeSig].accents.includes(beat);
     osc.frequency.value = accent ? 1000 : 700;
@@ -77,8 +77,7 @@ function renderBeatDots() {
 }
 
 function start() {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
+    _ensureAudio();
 
     isPlaying    = true;
     beatIndex    = 0;
@@ -109,7 +108,10 @@ function stop() {
 function setBpm(val) {
     bpm = Math.max(BPM_MIN, Math.min(BPM_MAX, val));
     document.getElementById('bpm-display').textContent = bpm;
-    document.getElementById('bpm-slider').value = bpm;
+    var slider = document.getElementById('bpm-slider');
+    slider.value = bpm;
+    slider.style.setProperty('--bpm-pct',
+        ((bpm - BPM_MIN) / (BPM_MAX - BPM_MIN) * 100).toFixed(1) + '%');
 }
 
 
@@ -121,6 +123,7 @@ $(document).ready(function () {
             $('#nav-metronome').addClass('active').append('<span class="sr-only">(current)</span>');
         });
 
+    setBpm(bpm);
     renderBeatDots();
 
     document.getElementById('start-btn').addEventListener('click', () => {

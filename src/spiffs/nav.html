@@ -4,8 +4,8 @@
         <span class="navbar-toggler-icon"></span>
     </button>
     <a class="navbar-brand" href="index.html">ESPlay</a>
-    <div class="collapse navbar-collapse justify-content-center" id="navbarNavAltMarkup">
-        <div class="navbar-nav">
+    <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+        <div class="navbar-nav mx-auto">
             <a class="nav-item nav-link" href="index.html" id="nav-home">Home</a>
             <a class="nav-item nav-link" href="tuner.html" id="nav-tuner">Tuner</a>
             <a class="nav-item nav-link" href="scale.html" id="nav-scale">Scale</a>
@@ -13,55 +13,238 @@
             <a class="nav-item nav-link" href="metronome.html" id="nav-metronome">Metronome</a>
         </div>
     </div>
-    <div class="theme-toggle">
-        <span class="theme-toggle-label" id="sound-icon" title="Toggle sounds"></span>
-        <span class="theme-toggle-label" id="theme-icon"></span>
-        <label class="theme-switch" title="Toggle light/dark theme">
-            <input type="checkbox" id="theme-checkbox">
-            <span class="theme-slider"></span>
-        </label>
+    <div class="settings-widget" id="settings-widget">
+        <button class="settings-btn" id="settings-btn" title="Settings">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+        <div class="settings-panel" id="settings-panel" style="display:none">
+            <!-- Volume row -->
+            <div class="settings-row">
+                <span class="settings-label">Volume</span>
+                <input type="range" id="volume-slider" class="settings-volume-slider" min="0" max="100" step="1">
+            </div>
+            <!-- Theme row -->
+            <div class="settings-row">
+                <span class="settings-label">Theme</span>
+                <div class="settings-row-right">
+                    <span id="theme-icon" class="settings-theme-icon"></span>
+                    <label class="theme-switch" title="Toggle light/dark theme">
+                        <input type="checkbox" id="theme-checkbox">
+                        <span class="theme-slider"></span>
+                    </label>
+                </div>
+            </div>
+            <!-- WiFi section -->
+            <div class="settings-divider"></div>
+            <div class="settings-section-title">WiFi</div>
+            <div class="wifi-status-line" id="wifi-status-line">Checking...</div>
+            <div id="wifi-ap-view">
+                <button class="wifi-scan-btn" id="wifi-scan-btn">Scan Networks</button>
+                <div class="wifi-net-list" id="wifi-net-list"></div>
+                <div class="wifi-form" id="wifi-form" style="display:none">
+                    <div class="wifi-form-ssid">Connect to: <strong id="wifi-form-ssid-name"></strong></div>
+                    <input class="wifi-pass-input" type="password" id="wifi-pass" placeholder="Password (leave blank if open)">
+                    <div style="margin-top:6px">
+                        <button class="wifi-connect-btn" id="wifi-connect-btn">Connect</button>
+                        <button class="wifi-cancel-btn" id="wifi-cancel-btn" style="margin-left:6px">Cancel</button>
+                    </div>
+                </div>
+            </div>
+            <div id="wifi-sta-view" style="display:none">
+                <button class="wifi-disc-btn" id="wifi-disc-btn">Disconnect</button>
+            </div>
+            <div class="wifi-msg" id="wifi-msg"></div>
+        </div>
     </div>
 </nav>
 <script>
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 window.scrollTo(0, 0);
 (function() {
-    var SVG_SOUND_ON  = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>';
-    var SVG_SOUND_OFF = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>';
-    var soundIcon = document.getElementById('sound-icon');
-    function applySound(enabled) {
-        if (typeof soundsEnabled !== 'undefined') soundsEnabled = enabled;
-        soundIcon.innerHTML = enabled ? SVG_SOUND_ON : SVG_SOUND_OFF;
-        soundIcon.classList.toggle('muted', !enabled);
-    }
-    applySound(localStorage.getItem('sounds') !== 'false');
-    soundIcon.addEventListener('click', function() {
-        var enabled = !(typeof soundsEnabled !== 'undefined' ? soundsEnabled : true);
-        localStorage.setItem('sounds', enabled ? 'true' : 'false');
-        applySound(enabled);
+    /* ---- Volume slider ---- */
+    var volSlider = document.getElementById('volume-slider');
+    var savedVol  = parseFloat(localStorage.getItem('volume') || '1');
+    volSlider.value = Math.round(savedVol * 100);
+    volSlider.style.setProperty('--vol-pct', Math.round(savedVol * 100) + '%');
+    volSlider.addEventListener('input', function() {
+        var v = parseInt(this.value) / 100;
+        masterVolume = v;
+        if (masterGain) masterGain.gain.value = v;
+        localStorage.setItem('volume', v.toString());
+        this.style.setProperty('--vol-pct', this.value + '%');
     });
 
-    var cb = document.getElementById('theme-checkbox');
+    /* ---- Theme ---- */
+    var cb   = document.getElementById('theme-checkbox');
     var icon = document.getElementById('theme-icon');
     var isLight = localStorage.getItem('theme') !== 'dark';
-    var SVG_SUN  = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>';
-    var SVG_MOON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
-    function apply(light) {
-        if (light) {
-            document.body.classList.add('light-theme');
-            cb.checked = true;
-            icon.innerHTML = SVG_SUN;
-        } else {
-            document.body.classList.remove('light-theme');
-            cb.checked = false;
-            icon.innerHTML = SVG_MOON;
-        }
+    var SVG_SUN  = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>';
+    var SVG_MOON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+    function applyTheme(light) {
+        if (light) { document.body.classList.add('light-theme');    cb.checked = true;  icon.innerHTML = SVG_SUN; }
+        else        { document.body.classList.remove('light-theme'); cb.checked = false; icon.innerHTML = SVG_MOON; }
     }
-    apply(isLight);
+    applyTheme(isLight);
     cb.addEventListener('change', function() {
         var light = cb.checked;
         localStorage.setItem('theme', light ? 'light' : 'dark');
-        apply(light);
+        applyTheme(light);
+    });
+
+    /* ---- Settings panel open/close ---- */
+    document.getElementById('settings-btn').addEventListener('click', function(e) {
+        e.stopPropagation();
+        var panel = document.getElementById('settings-panel');
+        if (panel.style.display === 'none') {
+            panel.style.display = 'block';
+            wifiStatus();
+        } else {
+            panel.style.display = 'none';
+        }
+    });
+    document.addEventListener('click', function(e) {
+        if (!document.getElementById('settings-widget').contains(e.target)) {
+            document.getElementById('settings-panel').style.display = 'none';
+        }
+    });
+
+    /* ---- WiFi ---- */
+    var wifiSelectedSsid = '';
+    var wifiSelectedAuth = 1;
+
+    function rssiLabel(rssi) {
+        if (rssi >= -50) return '████';
+        if (rssi >= -62) return '███░';
+        if (rssi >= -74) return '██░░';
+        return '█░░░';
+    }
+
+    function wifiSetMsg(text, cls) {
+        var el = document.getElementById('wifi-msg');
+        el.textContent = text;
+        el.className = 'wifi-msg' + (cls ? ' ' + cls : '');
+    }
+
+    function wifiStatus() {
+        fetch('/api/wifi/status')
+            .then(function(r) { return r.json(); })
+            .then(function(j) {
+                var line    = document.getElementById('wifi-status-line');
+                var apView  = document.getElementById('wifi-ap-view');
+                var staView = document.getElementById('wifi-sta-view');
+                if (j.mode === 'ap') {
+                    line.innerHTML = 'AP &mdash; <strong>' + j.ssid + '</strong>';
+                    apView.style.display  = 'block';
+                    staView.style.display = 'none';
+                } else if (j.connecting) {
+                    line.innerHTML = 'Connecting to <strong>' + j.ssid + '</strong>&hellip;';
+                    apView.style.display  = 'none';
+                    staView.style.display = 'none';
+                } else {
+                    line.innerHTML = '<strong>' + j.ssid + '</strong> &bull; ' + j.ip;
+                    apView.style.display  = 'none';
+                    staView.style.display = 'block';
+                }
+            })
+            .catch(function() {
+                document.getElementById('wifi-status-line').textContent = 'Status unavailable';
+            });
+    }
+
+    function wifiScan() {
+        var btn = document.getElementById('wifi-scan-btn');
+        btn.textContent = 'Scanning…';
+        btn.disabled = true;
+        document.getElementById('wifi-net-list').innerHTML = '';
+        document.getElementById('wifi-form').style.display = 'none';
+        wifiSetMsg('');
+        fetch('/api/wifi/scan', { method: 'POST' })
+            .then(function(r) { return r.json(); })
+            .then(function(nets) {
+                var html = '';
+                nets.forEach(function(n) {
+                    var lock = n.auth ? '🔒 ' : '';
+                    html += '<div class="wifi-net-item" data-ssid="' +
+                        n.ssid.replace(/&/g,'&amp;').replace(/"/g,'&quot;') +
+                        '" data-auth="' + n.auth + '">' +
+                        '<span>' + lock + n.ssid + '</span>' +
+                        '<span class="wifi-net-rssi">' + rssiLabel(n.rssi) + '</span></div>';
+                });
+                if (!html) html = '<div style="font-size:0.82rem;color:var(--fg-gray);padding:6px 0">No networks found</div>';
+                document.getElementById('wifi-net-list').innerHTML = html;
+                btn.textContent = 'Scan Again';
+                btn.disabled = false;
+            })
+            .catch(function() {
+                wifiSetMsg('Scan failed', 'err');
+                btn.textContent = 'Scan Networks';
+                btn.disabled = false;
+            });
+    }
+
+    function wifiSelect(ssid, auth) {
+        wifiSelectedSsid = ssid;
+        wifiSelectedAuth = auth;
+        document.getElementById('wifi-form-ssid-name').textContent = ssid;
+        var passInput = document.getElementById('wifi-pass');
+        passInput.value = '';
+        document.getElementById('wifi-form').style.display = 'block';
+        if (auth === 0) {
+            passInput.placeholder = 'Open network – no password needed';
+        } else {
+            passInput.placeholder = 'Password';
+            passInput.focus();
+        }
+        wifiSetMsg('');
+    }
+
+    function wifiConnect() {
+        var pass = document.getElementById('wifi-pass').value;
+        document.getElementById('wifi-connect-btn').disabled = true;
+        wifiSetMsg('Connecting…');
+        fetch('/api/wifi/connect', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ssid: wifiSelectedSsid, pass: pass })
+        })
+        .then(function() { showReconnectMsg(wifiSelectedSsid); })
+        .catch(function() { showReconnectMsg(wifiSelectedSsid); });
+    }
+
+    function showReconnectMsg(ssid) {
+        document.getElementById('wifi-form').style.display = 'none';
+        document.getElementById('wifi-net-list').innerHTML = '';
+        document.getElementById('wifi-scan-btn').style.display = 'none';
+        document.getElementById('wifi-status-line').innerHTML =
+            'Connecting to <strong>' + ssid + '</strong>…';
+        wifiSetMsg('Reconnect to your home WiFi, then visit espplay.local', 'ok');
+    }
+
+    function wifiDisconnect() {
+        fetch('/api/wifi/disconnect', { method: 'POST' })
+            .then(function() {
+                document.getElementById('wifi-sta-view').style.display  = 'none';
+                document.getElementById('wifi-ap-view').style.display   = 'block';
+                document.getElementById('wifi-status-line').innerHTML   = 'AP &mdash; <strong>ESPlay</strong>';
+                document.getElementById('wifi-scan-btn').style.display  = '';
+                wifiSetMsg('Switched to AP mode: ESPlay', 'ok');
+            })
+            .catch(function() { wifiSetMsg('Error', 'err'); });
+    }
+
+    document.getElementById('wifi-scan-btn').addEventListener('click', wifiScan);
+    document.getElementById('wifi-connect-btn').addEventListener('click', wifiConnect);
+    document.getElementById('wifi-disc-btn').addEventListener('click', wifiDisconnect);
+    document.getElementById('wifi-cancel-btn').addEventListener('click', function() {
+        document.getElementById('wifi-form').style.display = 'none';
+        wifiSetMsg('');
+    });
+    document.getElementById('wifi-net-list').addEventListener('click', function(e) {
+        var item = e.target.closest('.wifi-net-item');
+        if (item) wifiSelect(item.dataset.ssid, parseInt(item.dataset.auth));
+    });
+    document.getElementById('wifi-pass').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') wifiConnect();
     });
 })();
 </script>

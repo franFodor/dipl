@@ -3,15 +3,18 @@
 
 /**
  * @file server.h
- * @brief HTTP server, Wi-Fi AP, and shared audio-detection state.
+ * @brief HTTP server and shared audio-detection state.
  *
- * Exposes a demand-driven JSON API consumed by the web front-end:
- *   - GET  /api/note   — wakes the audio processor, returns one note result.
- *   - GET  /api/chord  — wakes the audio processor, returns one chord result.
- *   - POST /api/mode   — switches between "note" and "chord" detection modes.
+ * Exposes a JSON API consumed by the web front-end:
+ *   GET  /api/note          — latest note detection result
+ *   GET  /api/chord         — latest chord detection result
+ *   POST /api/mode          — switch between "note" and "chord" modes
+ *   GET  /api/wifi/status   — current WiFi mode and IP
+ *   POST /api/wifi/scan     — scan nearby networks, returns JSON array
+ *   POST /api/wifi/connect  — connect to a network (body: JSON ssid+pass)
+ *   POST /api/wifi/disconnect — revert to AP mode
  *
- * Each API call blocks until the processor task completes one FFT frame and
- * signals result_ready_sem, ensuring every response contains fresh data.
+ * WiFi initialisation is handled by wifi_manager_init() in wifi_manager.c.
  */
 
 #include <string.h>
@@ -24,18 +27,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 
-/** SSID broadcast by the ESP32 soft access point. */
-#define WIFI_AP_SSID      "ESP_GUITAR_TUNER"
-
-/** WPA2-PSK passphrase.  Set to "" for an open (no-password) network. */
-#define WIFI_AP_PASS      "12345678"
-
-/** 802.11 channel used by the access point (1–13). */
-#define WIFI_AP_CHANNEL   1
-
-/** Maximum number of simultaneous Wi-Fi client connections. */
-#define WIFI_AP_MAX_CONN  4
-
 /**
  * @brief Active audio-detection mode.
  */
@@ -43,13 +34,6 @@ typedef enum {
     DETECTION_MODE_NOTE  = 0, /**< Single-note detection (tuner page). */
     DETECTION_MODE_CHORD = 1, /**< Polyphonic chord recognition. */
 } detection_mode_t;
-
-/**
- * @brief Initialise NVS, the TCP/IP stack, and start the Wi-Fi access point.
- *
- * Must be called before web_server_start().
- */
-void wifi_ap_start(void);
 
 /**
  * @brief Create HTTP server mutexes/semaphores and register all URI handlers.

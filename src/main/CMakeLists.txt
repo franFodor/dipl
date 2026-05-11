@@ -1,6 +1,6 @@
-idf_component_register(SRCS "server.c" "main.c" "note.c" "chord.c"
+idf_component_register(SRCS "server.c" "main.c" "note.c" "chord.c" "wifi_manager.c"
                     PRIV_REQUIRES spi_flash
-                    REQUIRES driver esp_wifi nvs_flash esp_netif esp_http_server spiffs
+                    REQUIRES driver esp_wifi nvs_flash esp_netif esp_http_server spiffs mdns
                     INCLUDE_DIRS "")
 
 spiffs_create_partition_image(spiffs ../spiffs FLASH_IN_PROJECT)

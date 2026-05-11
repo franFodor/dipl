@@ -67,61 +67,128 @@ body.light-theme {
     --bright-orange: #d65d0e;
 }
 
-/* Theme toggle */
-.theme-toggle {
+/* Settings widget */
+.settings-widget {
+    position: relative;
     display: flex;
     align-items: center;
     align-self: center;
-    gap: 6px;
     flex-shrink: 0;
     padding-right: 8px;
     margin-left: auto;
 }
 
-.theme-toggle-label {
-    font-size: 1rem;
-    line-height: 1;
-    height: 20px;
+.settings-btn {
+    cursor: pointer;
+    padding: 5px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--bg2);
+    background-color: var(--bg2);
+    color: var(--fg-gray);
+    display: flex;
+    align-items: center;
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.settings-btn:hover {
+    background-color: var(--yellow);
+    border-color: var(--yellow);
+    color: var(--bg);
+}
+
+.settings-panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 280px;
+    background-color: var(--bg1);
+    border: 2px solid var(--bg2);
+    border-radius: 8px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.35);
+    z-index: 1050;
+    padding: 12px 14px;
+    text-align: left;
+}
+
+.settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px 0;
+}
+
+.settings-label {
+    font-size: 0.88rem;
+    color: var(--fg-gray);
+}
+
+.settings-row-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.settings-theme-icon {
     display: flex;
     align-items: center;
     color: var(--fg-gray);
-    user-select: none;
 }
 
-#sound-icon {
+
+.settings-divider {
+    border: none;
+    border-top: 1px solid var(--bg2);
+    margin: 8px 0;
+}
+
+.settings-volume-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 120px;
+    height: 4px;
+    border-radius: 2px;
+    background: linear-gradient(to right, var(--yellow) var(--vol-pct, 100%), var(--bg2) var(--vol-pct, 100%));
+    outline: none;
     cursor: pointer;
-    padding: 4px 6px;
-    border-radius: 6px;
-    border: 1px solid var(--orange);
-    background-color: var(--orange);
-    color: var(--bg);
-    transition: color 0.15s, border-color 0.15s, background-color 0.15s;
 }
 
-#sound-icon:hover {
-    background-color: var(--bright-orange);
-    border-color: var(--bright-orange);
+.settings-volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--yellow);
+    cursor: pointer;
 }
 
-#sound-icon.muted {
-    background-color: var(--red);
-    border-color: var(--red);
-    color: var(--bg);
+.settings-volume-slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--yellow);
+    border: none;
+    cursor: pointer;
 }
 
-#sound-icon.muted:hover {
-    background-color: var(--bright-red);
-    border-color: var(--bright-red);
+.settings-volume-slider::-moz-range-progress {
+    background: var(--yellow);
+    height: 4px;
+    border-radius: 2px;
 }
 
-body.light-theme #sound-icon:not(.muted) {
-    background-color: var(--yellow);
-    border-color: var(--yellow);
+.settings-volume-slider::-moz-range-track {
+    background: var(--bg2);
+    height: 4px;
+    border-radius: 2px;
 }
 
-body.light-theme #sound-icon:not(.muted):hover {
-    background-color: var(--bright-yellow);
-    border-color: var(--bright-yellow);
+.settings-section-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--fg-gray);
+    margin-bottom: 6px;
 }
 
 .theme-switch {
@@ -390,14 +457,93 @@ body.light-theme .select-dark {
     cursor: not-allowed;
 }
 
+/* WiFi (inside settings panel) */
+.wifi-status-line {
+    font-size: 0.82rem;
+    color: var(--fg-gray);
+    margin-bottom: 8px;
+}
+
+.wifi-status-line strong { color: var(--fg); }
+
+.wifi-net-list { max-height: 160px; overflow-y: auto; margin-top: 6px; }
+
+.wifi-net-item {
+    padding: 5px 6px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 0.86rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--fg);
+}
+
+.wifi-net-item:hover { background-color: var(--bg2); color: var(--yellow); }
+.wifi-net-item:hover .wifi-net-rssi { color: var(--yellow); }
+
+.wifi-net-rssi {
+    font-size: 0.74rem;
+    color: var(--fg-gray);
+    white-space: nowrap;
+    letter-spacing: -1px;
+}
+
+.wifi-form {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--bg2);
+}
+
+.wifi-form-ssid { font-size: 0.82rem; color: var(--fg-gray); margin-bottom: 6px; }
+.wifi-form-ssid strong { color: var(--fg); }
+
+.wifi-pass-input {
+    width: 100%;
+    box-sizing: border-box;
+    background-color: var(--bg);
+    color: var(--fg);
+    border: 1px solid var(--bg2);
+    border-radius: 6px;
+    padding: 5px 8px;
+    font-size: 0.86rem;
+    font-family: inherit;
+}
+
+.wifi-pass-input:focus { border-color: var(--yellow); outline: none; }
+
+.wifi-msg { margin-top: 8px; font-size: 0.80rem; color: var(--fg-gray); line-height: 1.4; }
+.wifi-msg.ok  { color: var(--green); }
+.wifi-msg.err { color: var(--red);   }
+
+.wifi-scan-btn, .wifi-connect-btn, .wifi-disc-btn, .wifi-cancel-btn {
+    background-color: var(--bg2);
+    border: 1px solid var(--fg-gray);
+    color: var(--fg);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 0.84rem;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+    margin-top: 6px;
+}
+
+.wifi-scan-btn:hover, .wifi-connect-btn:hover { background-color: var(--yellow); color: var(--bg); border-color: var(--yellow); }
+.wifi-disc-btn:hover   { background-color: var(--red);     color: var(--bg); border-color: var(--red); }
+.wifi-cancel-btn:hover { background-color: var(--fg-gray); color: var(--bg); border-color: var(--fg-gray); }
+
 /* Mobile navbar */
 @media (max-width: 991.98px) {
-    .navbar-toggler  { order: 1; width: 96px; }
-    .navbar-brand    { order: 2; flex: 1; margin-left: 18px; text-align: center; }
-    .theme-toggle    { order: 3; width: 96px; margin-left: 0; padding-right: 0; justify-content: center; gap: 4px; }
-    .navbar-collapse { order: 4; width: 100%; }
+    .navbar-toggler   { order: 1; width: 72px; }
+    .navbar-brand     { order: 2; flex: 1; margin-left: 18px; text-align: center; }
+    .settings-widget  { order: 3; width: 72px; margin-left: 0; padding-right: 0; justify-content: center; }
+    .navbar-collapse  { order: 4; width: 100%; }
 
-    .navbar-collapse .nav-link {
-        margin: 4px 8px;
+    .navbar-collapse .nav-link { margin: 4px 8px; }
+
+    .settings-panel {
+        right: 0;
+        width: min(300px, 92vw);
     }
 }
